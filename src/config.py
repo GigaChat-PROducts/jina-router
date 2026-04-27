@@ -10,7 +10,7 @@ class RAGSettings(BaseSettings):
         description="URL reranker endpoint",
     )
     cross_encoder_model: str = ""
-    global_token_limit: int | None = Field(
+    global_token_limit: int = Field(
         default=10000,
         description="Global quota budget",
     )

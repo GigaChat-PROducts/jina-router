@@ -30,6 +30,9 @@ class BaseRerankerClient(ABC):
         raise NotImplementedError
 
 
+jina_cache = {}
+
+
 class JinaRerankerClient(BaseRerankerClient):
     """HTTP-клиент к reranker endpoint-у в формате Jina-compatible `/predict`."""
 
@@ -37,6 +40,7 @@ class JinaRerankerClient(BaseRerankerClient):
         """Нормализовать базовый URL и сохранить конечный predict endpoint."""
 
         self._url = endpoint.rstrip("/") + "/predict"
+        self.cache = jina_cache
 
     @staticmethod
     def _extract_scores(data: object) -> list[float]:
@@ -64,6 +68,8 @@ class JinaRerankerClient(BaseRerankerClient):
         documents: list[str],
     ) -> list[float]:
         """Вызвать reranker backend и вернуть score-ы для переданных документов."""
+        if (query, tuple(documents)) in self.cache:
+            return self.cache[(query, tuple(documents))]
 
         payload = [{"query": query, "documents": documents}]
         async with aiohttp.ClientSession(
@@ -72,7 +78,9 @@ class JinaRerankerClient(BaseRerankerClient):
             async with session.post(self._url, json=payload) as response:
                 response.raise_for_status()
                 data = await response.json()
-        return self._extract_scores(data)
+        res = self._extract_scores(data)
+        self.cache[(query, tuple(documents))] = res
+        return res
 
 
 __all__ = [
