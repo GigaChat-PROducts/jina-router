@@ -79,7 +79,7 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
                     },
                 )
             )
-    with open("dataset/data/dataset.json", "w") as f:
+    with open("src/dataset/data/dataset.json", "w") as f:
         json.dump(
             [item.model_dump(mode="json") for item in dataset],
             f,
@@ -124,7 +124,7 @@ def label_dataset(dataset: list[DatasetItem], client: LLM):
         ]
         item.current_product = response["current_product"]
 
-    with open("dataset/data/labeled_dataset.json", "w") as f:
+    with open("src/dataset/data/labeled_dataset.json", "w") as f:
         json.dump(
             [item.model_dump(mode="json") for item in dataset],
             f,
@@ -134,7 +134,7 @@ def label_dataset(dataset: list[DatasetItem], client: LLM):
 
 
 if __name__ == "__main__":
-    with open("dataset/data/d30_full_dialogs.json", "r") as f:
+    with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
         dataset = [D30Item(**item) for item in json.load(f)]
     config = DatasetConfig()
     dataset = create_dataset(dataset, config)

@@ -66,7 +66,9 @@ class JinaRerankerClient(BaseRerankerClient):
         """Вызвать reranker backend и вернуть score-ы для переданных документов."""
 
         payload = [{"query": query, "documents": documents}]
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=1000)
+        ) as session:
             async with session.post(self._url, json=payload) as response:
                 response.raise_for_status()
                 data = await response.json()
