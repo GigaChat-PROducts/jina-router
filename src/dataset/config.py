@@ -5,7 +5,7 @@ from .schemas import Combination
 
 
 class DatasetConfig(BaseSettings):
-    target_size: int = 10
+    target_size: int = 1000
     train_size: float = 0.0
     val_size: float = 0.0
     test_size: float = 1.0
