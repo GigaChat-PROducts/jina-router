@@ -1,7 +1,11 @@
 *.env
 
 .idea
+.venv
 **draft**
 **trash/
 
 data
+
+*.pyc
+.vscode
