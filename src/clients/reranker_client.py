@@ -41,6 +41,7 @@ class JinaRerankerClient(BaseRerankerClient):
 
         self._url = endpoint.rstrip("/") + "/predict"
         self.cache = jina_cache
+        self.semaphore = asyncio.Semaphore(256)
 
     @staticmethod
     def _extract_scores(data: object) -> list[float]:
@@ -75,9 +76,10 @@ class JinaRerankerClient(BaseRerankerClient):
         async with aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=1000)
         ) as session:
-            async with session.post(self._url, json=payload) as response:
-                response.raise_for_status()
-                data = await response.json()
+            async with self.semaphore:
+                async with session.post(self._url, json=payload) as response:
+                    response.raise_for_status()
+                    data = await response.json()
         res = self._extract_scores(data)
         self.cache[(query, tuple(documents))] = res
         return res

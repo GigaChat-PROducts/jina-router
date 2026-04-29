@@ -5,10 +5,10 @@ from .schemas import Combination
 
 
 class DatasetConfig(BaseSettings):
-    target_size: int = 100
-    train_size: float = 0.0
-    val_size: float = 0.0
-    test_size: float = 1.0
+    target_size: int = 3000
+    train_size: float = 0.8
+    val_size: float = 0.1
+    test_size: float = 0.1
 
     combinations: list[Combination] = [
         Combination(**comb) for comb in ALLOWED_COMBINATIONS

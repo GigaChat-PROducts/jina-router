@@ -19,19 +19,19 @@ class RAGSettings(BaseSettings):
         description="Toggle rerank-based quota planning",
     )
     task_reranking_temperature: float = Field(
-        default=2.0,
+        default=2.025,
         description="Softmax temperature for task allocation",
     )
     product_reranking_temperature: float = Field(
-        default=0.5,
+        default=0.1014,
         description="Softmax temperature for product allocation",
     )
     base_product_multiplier: float = Field(
-        default=2,
+        default=1,
         description="Score multiplier for base product",
     )
     current_product_multiplier: float = Field(
-        default=2,
+        default=1.917,
         description="Score multiplier for current product",
     )
     future_product_multiplier: float = Field(
@@ -40,7 +40,7 @@ class RAGSettings(BaseSettings):
     )
     quota_tasks: list[QuotaTask] = Field(
         default_factory=lambda: [
-            QuotaTask(name="documents", multiplier=5.0),
+            QuotaTask(name="documents", multiplier=2.71),
             QuotaTask(name="best_practices", multiplier=1.0),
         ],
         description="Task definitions and weights",

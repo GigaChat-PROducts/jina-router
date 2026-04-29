@@ -1,0 +1,10 @@
+{
+  "samples_total": 294,
+  "samples_processed": 294,
+  "samples_failed": 0,
+  "task_kl_div": 0.21790839375362533,
+  "task_mse": 0.09582954374604016,
+  "product_kl_div": 18.915579019187973,
+  "product_mse": 0.1798854966090895,
+  "failures": []
+}

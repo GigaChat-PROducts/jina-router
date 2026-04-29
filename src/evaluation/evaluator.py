@@ -2,6 +2,7 @@ import asyncio
 import json
 import math
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -10,7 +11,7 @@ from tqdm.asyncio import tqdm as async_tqdm
 from src.clients.reranker_client import JinaRerankerClient
 from src.config import rag_settings
 from src.dataset.product_mapping import ID_TO_PRODUCT
-from src.dataset.schemas import DatasetItem, Distribution
+from src.dataset.schemas import DatasetItem, Distribution, ItemClass
 from src.evaluation.quotas import QuotaTask, RerankQuotaPlanner, StaticQuotaPlanner
 
 Metric = Literal["kl_div", "mse"]
@@ -220,25 +221,34 @@ def _aggregate_metric_sums(
         task_kl.append(get_scores(item.gt_task_distribution, pred_task, "kl_div"))
         task_mse.append(get_scores(item.gt_task_distribution, pred_task, "mse"))
         product_kl.append(
-            get_scores(item.gt_product_distribution, pred_product, "kl_div")
+            get_scores(
+                item.gt_product_distribution_with_context, pred_product, "kl_div"
+            )
         )
         product_mse.append(
-            get_scores(item.gt_product_distribution, pred_product, "mse")
+            get_scores(item.gt_product_distribution_with_context, pred_product, "mse")
         )
 
     return task_kl, task_mse, product_kl, product_mse, failures
 
 
+def get_dataset(path: Path, mode: ItemClass) -> list[DatasetItem]:
+    dataset: list[DatasetItem] = [
+        DatasetItem.model_validate(item)
+        for item in json.loads(path.read_text(encoding="utf-8"))
+        if item.get("gt_task_distribution") and item.get("gt_product_distribution")
+    ]
+    dataset = [item for item in dataset if item.item_class == mode]
+    return dataset
+
+
 async def run_evaluation(
     dataset_path: Path,
+    mode: ItemClass,
     config: EvaluationConfig | None = None,
 ) -> EvaluationResult:
     effective_config = build_default_config() if config is None else config
-    dataset: list[DatasetItem] = [
-        DatasetItem.model_validate(item)
-        for item in json.loads(dataset_path.read_text(encoding="utf-8"))
-        if item.get("gt_task_distribution") and item.get("gt_product_distribution")
-    ]
+    dataset = get_dataset(dataset_path, mode)
     planner = _build_planner(effective_config)
     tasks = [_predict_item(item, planner) for item in dataset]
     predictions = await async_tqdm.gather(*tasks, total=len(tasks))
@@ -263,8 +273,16 @@ async def run_evaluation(
 
 async def main() -> None:
     path = Path("src/dataset/data/labeled_dataset.json")
-    results = await run_evaluation(path, build_default_config())
+    results = await run_evaluation(path, ItemClass.TEST, build_default_config())
     print(json.dumps(results.to_dict(), ensure_ascii=False, indent=2))
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_path = (
+        Path(__file__).parent / "evaluation_results" / f"evaluation_{timestamp}.json"
+    )
+    output_path.parent.mkdir(exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(results.to_dict(), f, ensure_ascii=False, indent=2)
+    print(f"Results saved to {output_path}")
 
 
 if __name__ == "__main__":

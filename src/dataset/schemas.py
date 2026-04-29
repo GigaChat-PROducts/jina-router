@@ -37,5 +37,6 @@ class DatasetItem(BaseModel):
     dialog: list[str]
     gt_task_distribution: list[Distribution] | None = None
     gt_product_distribution: list[Distribution] | None = None
+    gt_product_distribution_with_context: list[Distribution] | None = None
     current_product: str | None = None
     metadata: dict

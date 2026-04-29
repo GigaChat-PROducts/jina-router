@@ -114,19 +114,32 @@ def label_dataset(dataset: list[DatasetItem], client: LLM):
         )
         message_list.append(messages)
     responses = client.call_sync(message_list=message_list)
+    new_dataset = []
     for item, response in zip(dataset, responses):
-        response = json_repair.loads(response["response"])
-        item.gt_task_distribution = [
-            Distribution(**dist) for dist in response["gt_task_distribution"]
-        ]
-        item.gt_product_distribution = [
-            Distribution(**dist) for dist in response["gt_product_distribution"]
-        ]
-        item.current_product = response["current_product"]
+        try:
+            if response is None:
+                raise ValueError("Received empty response from LLM")
+            response = json_repair.loads(response["response"])
+            item.gt_task_distribution = [
+                Distribution(**dist) for dist in response["gt_task_distribution"]
+            ]
+            item.gt_product_distribution = [
+                Distribution(**dist) for dist in response["gt_product_distribution"]
+            ]
+            item.gt_product_distribution_with_context = [
+                Distribution(**dist)
+                for dist in response["gt_product_distribution_with_context"]
+            ]
+
+            item.current_product = response["current_product"]
+            new_dataset.append(item)
+        except Exception as e:
+            print(f"Error processing item {item.item_id}: {e}")
+            continue
 
     with open("src/dataset/data/labeled_dataset.json", "w") as f:
         json.dump(
-            [item.model_dump(mode="json") for item in dataset],
+            [item.model_dump(mode="json") for item in new_dataset],
             f,
             ensure_ascii=False,
             indent=4,
