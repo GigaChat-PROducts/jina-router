@@ -120,16 +120,34 @@ def label_dataset(dataset: list[DatasetItem], client: LLM):
             if response is None:
                 raise ValueError("Received empty response from LLM")
             response = json_repair.loads(response["response"])
-            item.gt_task_distribution = [
+            gt_task_distribution = [
                 Distribution(**dist) for dist in response["gt_task_distribution"]
             ]
-            item.gt_product_distribution = [
+            gt_product_distribution = [
                 Distribution(**dist) for dist in response["gt_product_distribution"]
             ]
-            item.gt_product_distribution_with_context = [
+            gt_product_distribution_with_context = [
                 Distribution(**dist)
                 for dist in response["gt_product_distribution_with_context"]
             ]
+
+            expected_product_count = len([item.base_product, *item.products])
+            if len(gt_product_distribution) != expected_product_count:
+                raise ValueError(
+                    "Invalid gt_product_distribution length: "
+                    f"expected {expected_product_count}, got {len(gt_product_distribution)}"
+                )
+            if len(gt_product_distribution_with_context) != expected_product_count:
+                raise ValueError(
+                    "Invalid gt_product_distribution_with_context length: "
+                    f"expected {expected_product_count}, got {len(gt_product_distribution_with_context)}"
+                )
+
+            item.gt_task_distribution = gt_task_distribution
+            item.gt_product_distribution = gt_product_distribution
+            item.gt_product_distribution_with_context = (
+                gt_product_distribution_with_context
+            )
 
             item.current_product = response["current_product"]
             new_dataset.append(item)
