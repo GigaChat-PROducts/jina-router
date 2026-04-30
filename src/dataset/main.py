@@ -2,6 +2,8 @@ import json
 import math
 import os
 import random
+from datetime import datetime
+from pathlib import Path
 
 import json_repair
 import numpy as np
@@ -146,15 +148,37 @@ def label_dataset(dataset: list[DatasetItem], client: LLM):
         )
 
 
+def upload_to_huggingface(dataset_path: Path, repo_id: str):
+    from huggingface_hub import HfApi
+    from huggingface_hub.errors import RepositoryNotFoundError
+
+    api = HfApi(token=os.environ["HF_TOKEN"])
+    try:
+        api.upload_file(
+            path_or_fileobj=dataset_path,
+            path_in_repo="dataset.json",
+            repo_id=repo_id,
+            repo_type="dataset",
+            commit_message=f"Upload labeled dataset at {str(datetime.now())}",
+        )
+    except RepositoryNotFoundError:
+        api.create_repo(repo_id=repo_id, repo_type="dataset")
+        upload_to_huggingface(dataset_path, repo_id)
+
+
 if __name__ == "__main__":
-    with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
-        dataset = [D30Item(**item) for item in json.load(f)]
-    config = DatasetConfig()
-    dataset = create_dataset(dataset, config)
     load_dotenv(".env")
-    label_dataset(
-        dataset,
-        client=LLM.from_giga_token(
-            token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
-        ),
+    # with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
+    #     dataset = [D30Item(**item) for item in json.load(f)]
+    # config = DatasetConfig()
+    # dataset = create_dataset(dataset, config)
+    # label_dataset(
+    #     dataset,
+    #     client=LLM.from_giga_token(
+    #         token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
+    #     ),
+    # )
+    upload_to_huggingface(
+        dataset_path=Path(__file__).parent / "data/labeled_dataset.json",
+        repo_id="Hinter-Models/product-task-router",
     )
