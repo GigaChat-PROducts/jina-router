@@ -154,16 +154,23 @@ def upload_to_huggingface(dataset_path: Path, repo_id: str):
 
     api = HfApi(token=os.environ["HF_TOKEN"])
     try:
-        api.upload_file(
-            path_or_fileobj=dataset_path,
-            path_in_repo="dataset.json",
+        api.upload_folder(
             repo_id=repo_id,
             repo_type="dataset",
             commit_message=f"Upload labeled dataset at {str(datetime.now())}",
+            folder_path=str(dataset_path),
+            path_in_repo="/",
         )
     except RepositoryNotFoundError:
         api.create_repo(repo_id=repo_id, repo_type="dataset")
         upload_to_huggingface(dataset_path, repo_id)
+
+
+def download_dataset(repo_id: str, dataset_path: Path):
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ["HF_TOKEN"])
+    api.snapshot_download(repo_id=repo_id, repo_type="dataset", local_dir=dataset_path)
 
 
 if __name__ == "__main__":
@@ -178,7 +185,7 @@ if __name__ == "__main__":
     #         token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
     #     ),
     # )
-    upload_to_huggingface(
-        dataset_path=Path(__file__).parent / "data/labeled_dataset.json",
+    download_dataset(
+        dataset_path=Path(__file__).parent / "data",
         repo_id="Hinter-Models/product-task-router",
     )
