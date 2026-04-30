@@ -396,6 +396,7 @@ ALLOWED_COMBINATIONS = [
 
 DATA_DESCRIPTIONS = [
     {
+        "id": "documents",
         "name": "documents",
         "description": (
             "Официальная продуктовая документация Сбера: описание условий, тарифов, требований и характеристик продуктов. "
@@ -404,6 +405,7 @@ DATA_DESCRIPTIONS = [
         ),
     },
     {
+        "id": "best_practices",
         "name": "best_practices",
         "description": (
             "Методические материалы и скрипты продаж продуктов Сбера. "
@@ -415,3 +417,14 @@ DATA_DESCRIPTIONS = [
         ),
     },
 ]
+
+ID_TO_PRODUCT = {row["id"]: row for row in PRESENTATION_ROWS}
+NAME_TO_TASK = {row["name"]: row for row in DATA_DESCRIPTIONS}
+ID_TO_DESCRIPTION = {k: v["description"] for k, v in dict(**ID_TO_PRODUCT, **NAME_TO_TASK).items()}
+
+
+def product_name_to_id(product_name):
+    for row in PRESENTATION_ROWS + DATA_DESCRIPTIONS:
+        if row["name"] == product_name:
+            return row["id"]
+    raise ValueError(f"Product name '{product_name}' not found in presentation rows")
