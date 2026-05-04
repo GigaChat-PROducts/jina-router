@@ -99,7 +99,8 @@ class TrainingDataset:
         labels = torch.Tensor(item.labels)
         if len(labels) != len(documents):
             raise ValueError(f"{item.model_dump_json()}")
-        return EncodedDatasetItem(
-            inputs=inputs,
-            labels=labels,
-        )
+        return {
+            "input_ids": inputs.input_ids.squeeze(0),
+            "attention_mask": inputs.attention_mask.squeeze(0),
+            "labels": labels.squeeze(0),
+        } 

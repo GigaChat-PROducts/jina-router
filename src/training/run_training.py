@@ -17,25 +17,13 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def build_collate_fn(tokenizer: ModelTokenizer):
-    pad_token_id = tokenizer.tokenizer.pad_token_id or 0
+def collate_fn(batch):
+    return {
+        "input_ids": torch.Tensor([item.inputs.input_ids.squeeze(0) for item in batch]),
+        "attention_mask": torch.Tensor([item.inputs.attention_mask.squeeze(0) for item in batch]),
+        "labels": torch.Tensor([item.labels for item in batch]),
+    }
 
-    def collate_fn(batch):
-        input_ids = [item.inputs.input_ids.squeeze(0) for item in batch]
-        attention_mask = [item.inputs.attention_mask.squeeze(0) for item in batch]
-        labels = [item.labels for item in batch]
-
-        return {
-            "input_ids": pad_sequence(
-                input_ids, batch_first=True, padding_value=pad_token_id
-            ),
-            "attention_mask": pad_sequence(
-                attention_mask, batch_first=True, padding_value=0
-            ),
-            "labels": pad_sequence(labels, batch_first=True, padding_value=-100.0),
-        }
-
-    return collate_fn
 
 
 def setup_mlflow(cfg: TrainingConfig):
@@ -76,7 +64,6 @@ def main():
         args=training_args,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        data_collator=build_collate_fn(tokenizer),
     )
 
     with mlflow.start_run(run_name="jina-reranker"):

@@ -47,16 +47,16 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         # 1. Get hidden states from the base Qwen model
         # We call super(modeling_qwen3.Qwen3ForCausalLM, self).forward to bypass
         # any parent logic that might be messing with the outputs
+        print(input_ids.shape, labels.shape)
         outputs = super().forward(
             input_ids=input_ids,
             attention_mask=attention_mask,
             position_ids=position_ids,
-            output_hidden_states=True,
-            return_dict=True,
+            output_hidden_states=False,
             use_cache=False,
         )
 
-        hidden_states = outputs.hidden_states[-1]
+        hidden_states: torch.Tensor = outputs.logits
         batch_size = hidden_states.size(0)
 
         # 2. Mask-based extraction (The ONNX-friendly way)
@@ -95,9 +95,9 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         loss = self.kl_div(aggregated_scores, labels)
 
         return CausalLMOutputWithScores(
-            scores=final_scores,
+            scores=None,
             logits=None,
             loss=loss,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
+            hidden_states=None,
+            attentions=None,
         )
