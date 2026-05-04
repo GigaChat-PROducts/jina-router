@@ -7,21 +7,21 @@ class TrainingConfig(BaseSettings):
 
     output_dir: str = Field(default="./outputs")
     num_train_epochs: int = Field(default=3)
-    per_device_train_batch_size: int = Field(default=1)
-    per_device_eval_batch_size: int = Field(default=1)
+    per_device_train_batch_size: int = Field(default=2)
+    per_device_eval_batch_size: int = Field(default=16)
     learning_rate: float = Field(default=5e-5)
-    warmup_steps: int = Field(default=500)
+    warmup_steps: int = Field(default=20)
     weight_decay: float = Field(default=0.01)
     max_grad_norm: float = Field(default=1.0)
-    gradient_accumulation_steps: int = Field(default=1)
-    gradient_checkpointing: bool = Field(default=True)
+    gradient_accumulation_steps: int = Field(default=4)
+    gradient_checkpointing: bool = Field(default=False)
 
     # Logging / saving
     eval_strategy: str = Field(default="steps")
-    eval_steps: int = Field(default=500)
-    logging_steps: int = Field(default=100)
-    save_steps: int = Field(default=500)
-    save_total_limit: int = Field(default=3)
+    eval_steps: int = Field(default=5)
+    logging_steps: int = Field(default=1)
+    save_steps: int = Field(default=50)
+    save_total_limit: int = Field(default=1)
 
     # MLflow defaults; tracking server is already running locally
     mlflow_tracking_uri: str = Field(default="http://localhost:5600")
@@ -61,4 +61,5 @@ class TrainingConfig(BaseSettings):
             fp16=self.fp16,
             report_to=["mlflow"],
             run_name="jina-reranker",
+            eval_on_start=False,
         )

@@ -33,8 +33,8 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         }
         self.doc_embed_token_id = 151670
         self.query_embed_token_id = 151671
-        self.kl_div = nn.KLDivLoss()
-        self.softmax = nn.Softmax()
+        self.kl_div = nn.KLDivLoss(reduction="batchmean")
+        self.log_softmax = nn.LogSoftmax(dim=-1)
 
     def forward(
         self,
@@ -91,7 +91,7 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
             sample_scores = all_scores[index][doc_mask[index]]
             final_scores[index, : sample_scores.size(0)] = sample_scores
 
-        aggregated_scores = self.softmax(final_scores)
+        aggregated_scores = self.log_softmax(final_scores)
         loss = self.kl_div(aggregated_scores, labels)
 
         return CausalLMOutputWithScores(
