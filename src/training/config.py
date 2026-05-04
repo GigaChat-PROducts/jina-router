@@ -1,0 +1,61 @@
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class TrainingConfig(BaseSettings):
+    """Configuration for HF Trainer. Non-secret defaults live here; secrets via env."""
+
+    output_dir: str = Field(default="./outputs")
+    num_train_epochs: int = Field(default=3)
+    per_device_train_batch_size: int = Field(default=8)
+    per_device_eval_batch_size: int = Field(default=16)
+    learning_rate: float = Field(default=5e-5)
+    warmup_steps: int = Field(default=500)
+    weight_decay: float = Field(default=0.01)
+    max_grad_norm: float = Field(default=1.0)
+    gradient_accumulation_steps: int = Field(default=1)
+
+    # Logging / saving
+    eval_strategy: str = Field(default="steps")
+    eval_steps: int = Field(default=500)
+    logging_steps: int = Field(default=100)
+    save_steps: int = Field(default=500)
+    save_total_limit: int = Field(default=3)
+
+    # MLflow defaults; tracking server is already running locally
+    mlflow_tracking_uri: str = Field(default="http://localhost:5600")
+    mlflow_experiment_name: str = Field(default="jina-router-training")
+
+    # Misc
+    seed: int = Field(default=42)
+    fp16: bool = Field(default=False)
+
+    model_config = SettingsConfigDict(
+        env_prefix="TRAINING__",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+    def get_training_arguments(self):
+        from transformers.training_args import TrainingArguments
+
+        return TrainingArguments(
+            output_dir=self.output_dir,
+            num_train_epochs=self.num_train_epochs,
+            per_device_train_batch_size=self.per_device_train_batch_size,
+            per_device_eval_batch_size=self.per_device_eval_batch_size,
+            learning_rate=self.learning_rate,
+            warmup_steps=self.warmup_steps,
+            weight_decay=self.weight_decay,
+            max_grad_norm=self.max_grad_norm,
+            gradient_accumulation_steps=self.gradient_accumulation_steps,
+            eval_strategy=self.eval_strategy,
+            eval_steps=self.eval_steps,
+            logging_steps=self.logging_steps,
+            save_steps=self.save_steps,
+            save_total_limit=self.save_total_limit,
+            seed=self.seed,
+            fp16=self.fp16,
+            report_to=["mlflow"],
+            run_name="jina-reranker",
+        )

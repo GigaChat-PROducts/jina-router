@@ -12,8 +12,10 @@ dependencies = [
     "langfuse>=4.5.0",
     "openai>=2.32.0",
     "plotly>=6.0.0",
+    "mlflow>=2.20.0",
     "requests>=2.33.1",
     "streamlit>=1.45.0",
+    "transformers>=4.41.0",
 ]
 
 [dependency-groups]

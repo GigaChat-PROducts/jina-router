@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
-import numpy as np
 import torch
 from torch import nn
 from transformers.modeling_outputs import CausalLMOutputWithPast
@@ -40,6 +39,7 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         input_ids: torch.LongTensor = None,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
+        labels: Optional[torch.Tensor] = None,
         **kwargs,  # Accept other args but don't use them
     ):
         # 1. Get hidden states from the base Qwen model
@@ -79,16 +79,28 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         # [batch, seq]
         all_scores = (query_norm * doc_norm).sum(dim=-1)
 
-        # 4. Gather only the doc token positions
-        # This keeps the output shape [batch, num_docs]
-        doc_indices = torch.where(input_ids == self.doc_embed_token_id)
-        final_scores = all_scores[doc_indices].view(batch_size, -1)
+        # 4. Gather doc token scores per sample and pad them to a common width.
+        doc_mask = input_ids == self.doc_embed_token_id
+        doc_counts = doc_mask.sum(dim=1)
+        max_docs = int(doc_counts.max().item()) if batch_size > 0 else 0
+        final_scores = all_scores.new_zeros((batch_size, max_docs))
 
-        # 5. Return the same object as the original model
+        for index in range(batch_size):
+            sample_scores = all_scores[index][doc_mask[index]]
+            final_scores[index, : sample_scores.size(0)] = sample_scores
+
+        # 5. Compute loss if labels provided (pure regression / MSE loss)
+        loss = None
+        if labels is not None:
+            label_mask = labels != -100
+            squared_error = (final_scores - labels) ** 2
+            valid_error = squared_error.masked_select(label_mask)
+            loss = valid_error.mean() if valid_error.numel() > 0 else None
+
         return CausalLMOutputWithScores(
             scores=final_scores,
             logits=None,
-            loss=None,
+            loss=loss,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
