@@ -33,6 +33,8 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         }
         self.doc_embed_token_id = 151670
         self.query_embed_token_id = 151671
+        self.kl_div = nn.KLDivLoss()
+        self.softmax = nn.Softmax()
 
     def forward(
         self,
@@ -89,13 +91,8 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
             sample_scores = all_scores[index][doc_mask[index]]
             final_scores[index, : sample_scores.size(0)] = sample_scores
 
-        # 5. Compute loss if labels provided (pure regression / MSE loss)
-        loss = None
-        if labels is not None:
-            label_mask = labels != -100
-            squared_error = (final_scores - labels) ** 2
-            valid_error = squared_error.masked_select(label_mask)
-            loss = valid_error.mean() if valid_error.numel() > 0 else None
+        aggregated_scores = self.softmax(final_scores)
+        loss = self.kl_div(aggregated_scores, labels)
 
         return CausalLMOutputWithScores(
             scores=final_scores,

@@ -7,13 +7,14 @@ class TrainingConfig(BaseSettings):
 
     output_dir: str = Field(default="./outputs")
     num_train_epochs: int = Field(default=3)
-    per_device_train_batch_size: int = Field(default=8)
-    per_device_eval_batch_size: int = Field(default=16)
+    per_device_train_batch_size: int = Field(default=1)
+    per_device_eval_batch_size: int = Field(default=1)
     learning_rate: float = Field(default=5e-5)
     warmup_steps: int = Field(default=500)
     weight_decay: float = Field(default=0.01)
     max_grad_norm: float = Field(default=1.0)
     gradient_accumulation_steps: int = Field(default=1)
+    gradient_checkpointing: bool = Field(default=True)
 
     # Logging / saving
     eval_strategy: str = Field(default="steps")
@@ -28,12 +29,13 @@ class TrainingConfig(BaseSettings):
 
     # Misc
     seed: int = Field(default=42)
-    fp16: bool = Field(default=False)
+    fp16: bool = Field(default=True)
 
     model_config = SettingsConfigDict(
         env_prefix="TRAINING__",
         env_file=".env",
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
     def get_training_arguments(self):
@@ -49,6 +51,7 @@ class TrainingConfig(BaseSettings):
             weight_decay=self.weight_decay,
             max_grad_norm=self.max_grad_norm,
             gradient_accumulation_steps=self.gradient_accumulation_steps,
+            gradient_checkpointing=self.gradient_checkpointing,
             eval_strategy=self.eval_strategy,
             eval_steps=self.eval_steps,
             logging_steps=self.logging_steps,

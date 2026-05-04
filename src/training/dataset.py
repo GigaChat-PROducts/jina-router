@@ -43,28 +43,43 @@ class TrainingDataset:
         def sort_labels(item, keys):
             labels = []
             for key in keys:
-                for distribution in item.gt_task_distribution:
+                for distribution in item.gt_task_distribution + item.gt_product_distribution:
                     if product_name_to_id(distribution.name) == key:
                         labels.append(distribution.probability)
+                        continue
+                    if " " in distribution.name and product_name_to_id(distribution.name[:distribution.name.find(" ")]) == key:
+                        labels.append(distribution.probability)
+
+            if len(labels) != len(keys):
+                raise ValueError(f"Error in generation {keys=} {labels=}")
             return labels
+        
+        error_count = 0
 
         for d in data:
             item = DatasetItem(**d)
             if item.item_class != mode:
                 continue
             dialog = "\n".join(item.dialog)
-            self.dataset.append(TrainingDatasetItem(
-                query=dialog,
-                document_keys=["documents", "best_practices"],
-                labels=sort_labels(item, ["factology", "sales_practices"]),
-            ))
+            try:
+                self.dataset.append(TrainingDatasetItem(
+                    query=dialog,
+                    document_keys=["documents", "best_practices"],
+                    labels=sort_labels(item, ["factology", "sales_practices"]),
+                ))
+            except ValueError:
+                error_count += 1
 
             document_keys = [item.base_product] + item.products
-            self.dataset.append(TrainingDatasetItem(
-                query=dialog,
-                document_keys=document_keys,
-                labels=sort_labels(item, document_keys),
-            ))
+            try:
+                self.dataset.append(TrainingDatasetItem(
+                    query=dialog,
+                    document_keys=document_keys,
+                    labels=sort_labels(item, document_keys),
+                ))
+            except ValueError:
+                error_count += 1
+        print(f"{error_count=}")
 
         self.tokenizer = tokenizer
 
@@ -82,6 +97,8 @@ class TrainingDataset:
         text = format_docs_prompts_func(query=query, docs=documents, special_tokens=self.tokenizer.special_tokens)
         inputs = self.tokenizer.tokenize(text)
         labels = torch.Tensor(item.labels)
+        if len(labels) != len(documents):
+            raise ValueError(f"{item.model_dump_json()}")
         return EncodedDatasetItem(
             inputs=inputs,
             labels=labels,

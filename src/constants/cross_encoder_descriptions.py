@@ -1,3 +1,6 @@
+import warnings
+
+
 PRESENTATION_ROWS = [
     {
         "id": "all_case_protection",
@@ -416,6 +419,27 @@ DATA_DESCRIPTIONS = [
             "«какие аргументы использовать» при работе с конкретным продуктом."
         ),
     },
+    {
+        "id": "factology",
+        "name": "factology",
+        "description": (
+            "Официальная продуктовая документация Сбера: описание условий, тарифов, требований и характеристик продуктов. "
+            "Содержит ответы на вопросы «что это такое», «как работает», «каковы условия», «что входит в продукт». "
+            "Источник для фактических и регуляторных сведений о продуктах: ставки, сроки, лимиты, правила, ограничения."
+        ),
+    },
+    {
+        "id": "sales_practices",
+        "name": "sales_practices",
+        "description": (
+            "Методические материалы и скрипты продаж продуктов Сбера. "
+            "Содержат: рекомендации по презентации и аргументации преимуществ продукта клиенту, "
+            "готовые ответы на возражения («дорого», «не нужно», «уже есть»), "
+            "техники выявления потребностей, сценарии разговора с клиентом, речевые модули. "
+            "Источник для вопросов «как продать», «как убедить клиента», «как ответить на возражение», "
+            "«какие аргументы использовать» при работе с конкретным продуктом."
+        ),
+    },
 ]
 
 ID_TO_PRODUCT = {row["id"]: row for row in PRESENTATION_ROWS}
@@ -427,4 +451,4 @@ def product_name_to_id(product_name):
     for row in PRESENTATION_ROWS + DATA_DESCRIPTIONS:
         if row["name"] == product_name:
             return row["id"]
-    raise ValueError(f"Product name '{product_name}' not found in presentation rows")
+    warnings.warn(f"Product name '{product_name}' not found in presentation rows")
