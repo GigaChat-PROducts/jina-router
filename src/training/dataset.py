@@ -55,7 +55,8 @@ class TrainingDataset:
             return labels
         
         error_count = 0
-
+        data_sources = 0
+        products = 0
         for d in data:
             item = DatasetItem(**d)
             if item.item_class != mode:
@@ -67,6 +68,7 @@ class TrainingDataset:
                     document_keys=["documents", "best_practices"],
                     labels=sort_labels(item, ["factology", "sales_practices"]),
                 ))
+                data_sources += 1
             except ValueError:
                 error_count += 1
 
@@ -77,10 +79,12 @@ class TrainingDataset:
                     document_keys=document_keys,
                     labels=sort_labels(item, document_keys),
                 ))
+                products += 1
             except ValueError:
                 error_count += 1
+        print(f"{mode=}")
         print(f"{error_count=}")
-
+        print(f"{data_sources=}, {products=}")
         self.tokenizer = tokenizer
 
     def __len__(self):
@@ -93,6 +97,7 @@ class TrainingDataset:
         documents = []
         for key in item.document_keys:
             documents.append(ID_TO_DESCRIPTION[key])
+        
         
         text = format_docs_prompts_func(query=query, docs=documents, special_tokens=self.tokenizer.special_tokens)
         inputs = self.tokenizer.tokenize(text)

@@ -11,3 +11,5 @@ data
 .vscode
 
 *.sqlite3
+
+outputs/*

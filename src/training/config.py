@@ -8,18 +8,18 @@ class TrainingConfig(BaseSettings):
     output_dir: str = Field(default="./outputs")
     num_train_epochs: int = Field(default=3)
     per_device_train_batch_size: int = Field(default=1)
-    per_device_eval_batch_size: int = Field(default=16)
+    per_device_eval_batch_size: int = Field(default=1)
     learning_rate: float = Field(default=5e-5)
     warmup_steps: int = Field(default=20)
     weight_decay: float = Field(default=0.01)
     max_grad_norm: float = Field(default=1.0)
-    gradient_accumulation_steps: int = Field(default=64)
+    gradient_accumulation_steps: int = Field(default=1)
     gradient_checkpointing: bool = Field(default=False)
 
     # Logging / saving
     eval_strategy: str = Field(default="steps")
-    eval_steps: int = Field(default=5)
-    logging_steps: int = Field(default=1)
+    eval_steps: int = Field(default=50)
+    logging_steps: int = Field(default=10)
     save_steps: int = Field(default=50)
     save_total_limit: int = Field(default=1)
 

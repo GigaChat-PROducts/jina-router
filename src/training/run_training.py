@@ -68,10 +68,7 @@ def main():
 
     with mlflow.start_run(run_name="jina-reranker"):
         mlflow.log_params(cfg.model_dump())
-        if args.mode == "train":
-            trainer.train()
-        else:
-            print(trainer.evaluate())
+        trainer.train()
 
 
 if __name__ == "__main__":
