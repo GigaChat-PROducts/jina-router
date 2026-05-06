@@ -28,8 +28,11 @@ class TrainingConfig(BaseSettings):
     mlflow_experiment_name: str = Field(default="jina-router-training")
 
     # Misc
+    # TODO BF16
+    # TODO CLEAR DATASET and multihead support
+    # TODO single item length
     seed: int = Field(default=42)
-    fp16: bool = Field(default=True)
+    bf16: bool = Field(default=True)
 
     model_config = SettingsConfigDict(
         env_prefix="TRAINING__",
@@ -58,7 +61,7 @@ class TrainingConfig(BaseSettings):
             save_steps=self.save_steps,
             save_total_limit=self.save_total_limit,
             seed=self.seed,
-            fp16=self.fp16,
+            bf16=self.bf16,
             report_to=["mlflow"],
             run_name="jina-reranker",
             eval_on_start=False,

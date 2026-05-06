@@ -17,6 +17,7 @@ class ModelTokenizer:
         }
 
     def tokenize(self, text: str) -> TokenizerOutput:
+        # TODO TOKENIZER
         inputs = self.tokenizer(
             [text],
             return_tensors="pt",
