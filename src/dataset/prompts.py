@@ -6,8 +6,8 @@ SYSTEM_PROMPT = """\
 ТИПЫ БАЗ ЗНАНИЙ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-• factology — документация по продуктам: условия, ставки, лимиты, сроки, механика работы, требования.
-• sales_practices — практики продаж: работа с возражениями, выявление потребностей, аргументация выгод, закрытие сделки.
+- documents — документация по продуктам: условия, ставки, лимиты, сроки, механика работы, требования.
+- best_practices — практики продаж: работа с возражениями, выявление потребностей, аргументация выгод, закрытие сделки.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 КАК ОПРЕДЕЛЯТЬ СООТНОШЕНИЕ ЗАДАЧ
@@ -17,16 +17,16 @@ SYSTEM_PROMPT = """\
 2. Выпиши конкретные темы/действия.
 3. Отнеси каждую тему к задаче:
 
-  → factology: ответить на вопрос об условиях, объяснить механику, привести цифры для аргументации.
-  → sales_practices: отработать возражение, выявить потребность, сделать переход к продукту, закрыть сделку.
+  → documents: ответить на вопрос об условиях, объяснить механику, привести цифры для аргументации.
+  → best_practices: отработать возражение, выявить потребность, сделать переход к продукту, закрыть сделку.
 
 4. Итоговое соотношение — пропорционально количеству тем.
 
 Ориентиры:
-  • Конкретный вопрос клиента об условиях → factology 0.7–0.9
-  • Возражение или сомнение → смесь: factology для аргументов + sales_practices для техники (примерно 0.3–0.5 / 0.5–0.7)
-  • Клиент пассивен, менеджер должен развить разговор → factology + sales_practices примерно поровну
-  • Переход к новому продукту → повышенная sales_practices (0.5–0.7)
+  • Конкретный вопрос клиента об условиях → documents 0.7–0.9
+  • Возражение или сомнение → смесь: documents для аргументов + best_practices для техники (примерно 0.3–0.5 / 0.5–0.7)
+  • Клиент пассивен, менеджер должен развить разговор → documents + best_practices примерно поровну
+  • Переход к новому продукту → повышенная best_practices (0.5–0.7)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 КАК ОПРЕДЕЛЯТЬ ПРОДУКТЫ (два распределения)
@@ -41,7 +41,7 @@ GT_PRODUCT_DISTRIBUTION_WITH_CONTEXT — с учётом prev_dialog:
   • Используется для эвристик поверх модели.
 
 Правила весов:
-  • Все продукты из переданного списка присутствуют в ответе, нерелевантные с вероятностью 0.0.
+  • Все id продуктов из переданного списка присутствуют в ответе, нерелевантные с вероятностью 0.0.
   • Сумма вероятностей каждого распределения строго равна 1.0.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -50,23 +50,23 @@ GT_PRODUCT_DISTRIBUTION_WITH_CONTEXT — с учётом prev_dialog:
 
 Пример 1 — конкретный вопрос об условиях:
   Фрагмент: "Какая минимальная сумма для входа?" / "От 100 000 рублей" / "А комиссия какая?"
-  Темы дальше: ответить про комиссию (factology), рассказать про доходность (factology).
-  → task: factology 0.85, sales_practices 0.15
-  → gt_product_distribution: zpif 0.95, остальные 0.0 (явно упоминается в фрагменте)
-  → gt_product_distribution_with_context: zpif 0.95 (совпадает, контекст не меняет)
+  Темы дальше: ответить про комиссию (documents), рассказать про доходность (documents).
+  → task: documents 0.85, best_practices 0.15
+  → gt_product_distribution: {"id": "zpif", "probability": 0.95}, остальные 0.0
+  → gt_product_distribution_with_context: {"id": "zpif", "probability": 0.95}
   → current_product: "zpif"
 
 Пример 2 — возражение клиента:
   Фрагмент: "Это так сложно и мне наверное не подойдёт" / менеджер начинает объяснять преимущества.
-  Темы дальше: отработать "сложно" (sales_practices), отработать "не подойдёт" (sales_practices), привести факты (factology).
-  2 темы sales + 1 тема factology → factology 0.35, sales_practices 0.65.
-  → task: factology 0.35, sales_practices 0.65
+  Темы дальше: отработать "сложно" (best_practices), отработать "не подойдёт" (best_practices), привести факты (documents).
+  2 темы best_practices + 1 тема documents → documents 0.35, best_practices 0.65.
+  → task: documents 0.35, best_practices 0.65
 
 Пример 3 — продукт не виден в текущем фрагменте:
   Фрагмент: "Ну а вообще?" / "Ну и условия там."
   Prev_dialog: обсуждался zpif, клиент сомневался.
-  → gt_product_distribution: invest 0.7, остальные 0.0 (zpif не назван явно в фрагменте)
-  → gt_product_distribution_with_context: zpif 0.9 (из prev_dialog очевидно)
+  → gt_product_distribution: {"id": "invest", "probability": 0.7}, остальные 0.0
+  → gt_product_distribution_with_context: {"id": "zpif", "probability": 0.9}
   → current_product: "zpif"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -84,18 +84,18 @@ GT_PRODUCT_DISTRIBUTION_WITH_CONTEXT — с учётом prev_dialog:
     "current_product_reasoning": "Какой продукт преобладал в конце prev_dialog."
   },
   "gt_task_distribution": [
-    {"name": "factology", "probability": float},
-    {"name": "sales_practices", "probability": float}
+    {"name": "documents", "probability": float},
+    {"name": "best_practices", "probability": float}
   ],
   "gt_product_distribution": [
-    {"name": "<product_key>", "probability": float},
+    {"id": "<product_id>", "probability": float},
     ...все продукты из переданного списка...
   ],
   "gt_product_distribution_with_context": [
-    {"name": "<product_key>", "probability": float},
+    {"id": "<product_id>", "probability": float},
     ...все продукты из переданного списка...
   ],
-  "current_product": "product_key или null"
+  "current_product": "product_id или null"
 }
 """
 
@@ -111,6 +111,6 @@ USER_PROMPT = """\
 {prev_dialog}
 
 ### ДОСТУПНЫЕ ПРОДУКТЫ
-Все ключи из этого списка обязаны присутствовать в обоих распределениях.
+Все id из этого списка обязаны присутствовать в обоих распределениях.
 {products_with_descriptions}
 """
