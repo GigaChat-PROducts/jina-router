@@ -13,3 +13,6 @@ data
 *.sqlite3
 
 outputs/*
+
+optuna
+mlruns/*

@@ -7,7 +7,9 @@ from pathlib import Path
 
 import json_repair
 import numpy as np
+import requests
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 from src.dataset.clients import LLM
 from src.dataset.config import DatasetConfig
@@ -19,6 +21,7 @@ from src.dataset.product_mapping import (
 )
 from src.dataset.prompts import SYSTEM_PROMPT, USER_PROMPT
 from src.dataset.schemas import D30Item, DatasetItem, Distribution, ItemClass
+from src.utils import format_docs_prompts_func
 
 
 def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig):
@@ -27,7 +30,7 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
     item_ratio = math.ceil(dataset_config.target_size / len(source_dataset))
     dataset: list[DatasetItem] = []
     random.shuffle(source_dataset)
-    for item in source_dataset:
+    for item in tqdm(source_dataset):
         dialog_len = len(item.dialog)
         item_class = np.random.choice(
             [ItemClass.TRAIN, ItemClass.VAL, ItemClass.TEST],
@@ -60,6 +63,16 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
 
             products = combination["content"]
             products = [p for p in products if random.random() > dataset_config.dropout]
+            embedded_item = format_docs_prompts_func(
+                query="\n".join(current_dialog),
+                docs=[ID_TO_PRODUCT[prod_id]["description"] for prod_id in products],
+            )
+            payload = {
+                "text": embedded_item,
+            }
+            response = requests.post(
+                "http://91.211.217.36:8022/api/v1/reranker/tokenize", json=payload
+            ).json()
 
             dataset.append(
                 DatasetItem(
@@ -79,6 +92,7 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
                         "dialog_len": dialog_len,
                         "source_product": item.products[0],
                     },
+                    len_tokens=len(response["data"]),
                 )
             )
     with open("src/dataset/data/dataset.json", "w") as f:
@@ -175,17 +189,17 @@ def download_dataset(repo_id: str, dataset_path: Path):
 
 if __name__ == "__main__":
     load_dotenv(".env")
-    # with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
-    #     dataset = [D30Item(**item) for item in json.load(f)]
-    # config = DatasetConfig()
-    # dataset = create_dataset(dataset, config)
+    with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
+        dataset = [D30Item(**item) for item in json.load(f)]
+    config = DatasetConfig()
+    dataset = create_dataset(dataset, config)
     # label_dataset(
     #     dataset,
     #     client=LLM.from_giga_token(
     #         token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
     #     ),
     # )
-    download_dataset(
-        dataset_path=Path(__file__).parent / "data",
-        repo_id="Hinter-Models/product-task-router",
-    )
+    # download_dataset(
+    #     dataset_path=Path(__file__).parent / "data",
+    #     repo_id="Hinter-Models/product-task-router",
+    # )

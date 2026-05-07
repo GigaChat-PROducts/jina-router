@@ -1,5 +1,9 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
+SPECIAL_TOKENS = {
+    "query_embed_token": "<|rerank_token|>",
+    "doc_embed_token": "<|embed_token|>",
+}
 
 
 def sanitize_input(text: str, special_tokens: Dict[str, str]) -> str:
@@ -15,6 +19,8 @@ def format_docs_prompts_func(
     special_tokens: Dict[str, str] = {},
     no_thinking: bool = True,
 ) -> str:
+    if not special_tokens:
+        special_tokens = SPECIAL_TOKENS
     query = sanitize_input(query, special_tokens)
     docs = [sanitize_input(doc, special_tokens) for doc in docs]
 
@@ -47,6 +53,5 @@ def format_docs_prompts_func(
     ]
     prompt += "\n".join(doc_prompts) + "\n"
     prompt += f"<query>\n{query}{query_emb_token}\n</query>"
-
 
     return prefix + prompt + suffix

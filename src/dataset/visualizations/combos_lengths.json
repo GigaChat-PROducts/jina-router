@@ -1,0 +1,71 @@
+[
+  {
+    "id": "vklad_pension_zp_zls_prime",
+    "name": "Вклад + перевод пенсии + Зарплатный клиент + ЗЛС + Прайм",
+    "main_product": "vklad",
+    "content": [
+      "perevod_pensii",
+      "perevod_zp",
+      "all_case_protection",
+      "sber_prime"
+    ],
+    "len_tokens": 891
+  },
+  {
+    "id": "sber_mobile_sber_prime",
+    "name": "Мобайл + Прайм",
+    "main_product": "sber_mobile",
+    "content": ["sber_prime"],
+    "len_tokens": 398
+  },
+  {
+    "id": "business_account_zp",
+    "name": "Счет для бизнеса + Зарплатный клиент",
+    "main_product": "business_account",
+    "content": ["perevod_zp"],
+    "len_tokens": 349
+  },
+  {
+    "id": "debit_card_main_kids_prime_health_cc",
+    "name": "Дебетовая карта + детская карта + Прайм + Здоровье + Кредитная карта",
+    "main_product": "debit_card",
+    "content": ["debit_card_kids", "sber_prime", "sber_health", "credit_card"],
+    "len_tokens": 950
+  },
+  {
+    "id": "sber_prime_sber_health",
+    "name": "Прайм + Здоровье (преза СберПрайм)",
+    "main_product": "sber_prime",
+    "content": ["sber_health"],
+    "len_tokens": 412
+  },
+  {
+    "id": "credit_card_sber_health_prime",
+    "name": "КК + Здоровье + Прайм (преза КК)",
+    "main_product": "credit_card",
+    "content": ["sber_health", "sber_prime"],
+    "len_tokens": 607
+  },
+  {
+    "id": "pds_all_case_protection",
+    "name": "ПДС + ЗЛС",
+    "main_product": "pds",
+    "content": ["all_case_protection"],
+    "len_tokens": 341
+  },
+  {
+    "id": "invest",
+    "name": "Инвестиционные продукты",
+    "main_product": "invest",
+    "content": [
+      "debentures",
+      "iis_3",
+      "ticket_to_future",
+      "zpif",
+      "opif",
+      "pds",
+      "apps"
+    ],
+    "len_tokens": 1560
+  }
+]
