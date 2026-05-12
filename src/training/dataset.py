@@ -12,7 +12,6 @@ from src.constants.cross_encoder_descriptions import (
 )
 from src.dataset import DatasetItem, ItemClass
 from src.training.tokenizer import ModelTokenizer, TokenizerOutput
-from src.utils import format_docs_prompts_func
 
 DATASET_PATH = (
     Path(__file__).parent.parent / "dataset" / "data" / "labeled_dataset.json"
@@ -117,15 +116,11 @@ class TrainingDataset:
         for key in item.document_keys:
             documents.append(ID_TO_DESCRIPTION[key])
 
-        text = format_docs_prompts_func(
-            query=query, docs=documents, special_tokens=self.tokenizer.special_tokens
-        )
-        inputs = self.tokenizer.tokenize(text)
-        labels = torch.Tensor(item.labels)
+        labels = item.labels
         if len(labels) != len(documents):
             raise ValueError(f"{item.model_dump_json()}")
         return {
-            "input_ids": inputs.input_ids.squeeze(0),
-            "attention_mask": inputs.attention_mask.squeeze(0),
-            "labels": labels.squeeze(0),
+            "query": query,
+            "documents": documents,
+            "labels": labels,
         }

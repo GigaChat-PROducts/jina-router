@@ -7,7 +7,6 @@ from pathlib import Path
 
 import json_repair
 import numpy as np
-import requests
 from dotenv import load_dotenv
 from tqdm import tqdm
 
@@ -19,12 +18,23 @@ from src.dataset.product_mapping import (
     ID_TO_PRODUCT,
     product_name_to_id,
 )
-from src.dataset.prompts import LABEL_SYSTEM_PROMPT, LABEL_USER_PROMPT, AUGMENT_SYSTEM_PROMPT, AUGMENT_USER_PROMPT
-from src.dataset.schemas import D30Item, DatasetItem, Distribution, ItemClass, ItemSource
-from src.utils import format_docs_prompts_func
+from src.dataset.prompts import (
+    AUGMENT_SYSTEM_PROMPT,
+    AUGMENT_USER_PROMPT,
+    LABEL_SYSTEM_PROMPT,
+    LABEL_USER_PROMPT,
+)
+from src.dataset.schemas import (
+    D30Item,
+    DatasetItem,
+    Distribution,
+    ItemClass,
+    ItemSource,
+)
 
 
 def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig):
+    raise ValueError("FIX ID")
     np.random.seed(dataset_config.random_state)
     random.seed(dataset_config.random_state)
     item_ratio = math.ceil(dataset_config.target_size / len(source_dataset))
@@ -63,9 +73,9 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
 
             products = combination["content"]
             products = [p for p in products if random.random() > dataset_config.dropout]
-            
 
             dataset.append(
+                # TODO FIX ID
                 DatasetItem(
                     item_id=item.item_id + f"_{a}_{b}",
                     item_class=item_class,
@@ -97,12 +107,15 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
 
 
 def enrich_dataset(dataset: list[DatasetItem], client: LLM):
-    new_items = []
     message_list = []
     for item in dataset:
         prev_dialog = "\n".join(item.metadata["prev_dialog"])
         products_with_descriptions = [
-            {k: v for k, v in ID_TO_PRODUCT[prod_id].items() if k in ["id", "description"]}
+            {
+                k: v
+                for k, v in ID_TO_PRODUCT[prod_id].items()
+                if k in ["id", "description"]
+            }
             for prod_id in [item.base_product] + item.products
         ]
         products_with_descriptions = json.dumps(
@@ -126,7 +139,7 @@ def enrich_dataset(dataset: list[DatasetItem], client: LLM):
     for item, response in zip(dataset, responses):
         try:
             if response is None:
-                raise ValueError(f"Response is None")
+                raise ValueError("Response is None")
             item = DatasetItem(**item.model_dump())
             item.dialog = json_repair.loads(response["response"])["dialog"]
             item.item_source = ItemSource.AUGMENTED
@@ -146,14 +159,17 @@ def enrich_dataset(dataset: list[DatasetItem], client: LLM):
     return dataset
 
 
-
 def label_dataset(dataset: list[DatasetItem], client: LLM):
     message_list = []
     random.shuffle(dataset)
     for item in dataset:
         prev_dialog = "\n".join(item.metadata["prev_dialog"])
         products_with_descriptions = [
-            {k: v for k, v in ID_TO_PRODUCT[prod_id].items() if k in ["id", "description"]}
+            {
+                k: v
+                for k, v in ID_TO_PRODUCT[prod_id].items()
+                if k in ["id", "description"]
+            }
             for prod_id in [item.base_product] + item.products
         ]
         products_with_descriptions = json.dumps(
@@ -183,7 +199,8 @@ def label_dataset(dataset: list[DatasetItem], client: LLM):
                 Distribution(**dist) for dist in response["gt_task_distribution"]
             ]
             item.gt_product_distribution = [
-                Distribution(name=dist["id"], probability=dist["probability"]) for dist in response["gt_product_distribution"]
+                Distribution(name=dist["id"], probability=dist["probability"])
+                for dist in response["gt_product_distribution"]
             ]
             item.gt_product_distribution_with_context = [
                 Distribution(name=dist["id"], probability=dist["probability"])
@@ -232,18 +249,18 @@ def download_dataset(repo_id: str, dataset_path: Path):
 
 if __name__ == "__main__":
     load_dotenv(".env")
-    with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
-        dataset = [D30Item(**item) for item in json.load(f)]
-    config = DatasetConfig()
-    client=LLM.from_giga_token(
-        token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
-    )
-    dataset = create_dataset(dataset, config)
-    dataset = enrich_dataset(dataset, client)
-    label_dataset(
-        dataset,
-        client=client,
-    )
+    # with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
+    #     dataset = [D30Item(**item) for item in json.load(f)]
+    # config = DatasetConfig()
+    # client=LLM.from_giga_token(
+    #     token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
+    # )
+    # dataset = create_dataset(dataset, config)
+    # dataset = enrich_dataset(dataset, client)
+    # label_dataset(
+    #     dataset,
+    #     client=client,
+    # )
     # upload_to_huggingface(
     #     dataset_path=Path(__file__).parent / "data",
     #     repo_id="Hinter-Models/product-task-router",
