@@ -4,7 +4,6 @@ import os
 
 import mlflow
 import torch
-from torch.nn.utils.rnn import pad_sequence
 from transformers import Trainer
 
 from src.dataset.schemas import ItemClass
@@ -20,10 +19,11 @@ logging.basicConfig(level=logging.INFO)
 def collate_fn(batch):
     return {
         "input_ids": torch.Tensor([item.inputs.input_ids.squeeze(0) for item in batch]),
-        "attention_mask": torch.Tensor([item.inputs.attention_mask.squeeze(0) for item in batch]),
+        "attention_mask": torch.Tensor(
+            [item.inputs.attention_mask.squeeze(0) for item in batch]
+        ),
         "labels": torch.Tensor([item.labels for item in batch]),
     }
-
 
 
 def setup_mlflow(cfg: TrainingConfig):
