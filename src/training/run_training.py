@@ -10,7 +10,7 @@ from src.dataset.schemas import ItemClass
 from src.training.config import TrainingConfig
 from src.training.dataset import TrainingDataset
 from src.training.modeling import JinaForRanking
-from src.training.tokenizer import ModelTokenizer
+from src.training.tokenizer import ModelTokenizer, ModelTokenizerConfig
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -51,7 +51,9 @@ def main():
 
     setup_mlflow(cfg)
 
-    tokenizer = ModelTokenizer()
+    tokenizer_config = ModelTokenizerConfig()
+
+    tokenizer = ModelTokenizer(tokenizer_config)
     train_ds = TrainingDataset(mode=ItemClass.TRAIN, tokenizer=tokenizer)
     eval_ds = TrainingDataset(mode=ItemClass.VAL, tokenizer=tokenizer)
 
