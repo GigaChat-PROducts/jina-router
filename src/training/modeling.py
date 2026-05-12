@@ -3,14 +3,13 @@ from typing import Optional
 
 import torch
 from torch import nn
-from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers.models.qwen3 import modeling_qwen3
 
 
 @dataclass
-class CausalLMOutputWithScores(CausalLMOutputWithPast):
-    scores: Optional[torch.Tensor] = None
-    loss: Optional[torch.FloatTensor] = None
+class CausalLMOutputWithScores:
+    scores: list[torch.Tensor]
+    loss: Optional[torch.Tensor] = None
 
 
 class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
@@ -33,7 +32,7 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         }
         self.doc_embed_token_id = 151670
         self.query_embed_token_id = 151671
-        self.loss_func = nn.KLDivLoss(reduction="batchmean")
+        self.loss_func = nn.KLDivLoss(reduction="sum")
 
     def forward(
         self,
@@ -55,26 +54,48 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         )
 
         hidden_states = outputs.hidden_states[-1]
-        batch_size, _, dim = hidden_states.shape
+        batch_size, _, _ = hidden_states.shape
 
-        query_embed_token_indexes = torch.eq(input_ids, self.query_embed_token_id)
-        doc_embed_token_indexes = torch.eq(input_ids, self.doc_embed_token_id)
+        doc_embeds = []
+        query_embeds = []
 
-        doc_embeds = hidden_states[doc_embed_token_indexes].view(batch_size, -1, dim)
-        query_embeds = hidden_states[query_embed_token_indexes].unsqueeze(1)
+        for i in range(batch_size):
+            doc_mask = input_ids[i] == self.doc_embed_token_id
+            query_mask = input_ids[i] == self.query_embed_token_id
 
-        doc_embeds = self.projector(doc_embeds)
-        query_embeds = self.projector(query_embeds)
+            d_embeds = hidden_states[i][doc_mask]  # [num_docs_i, dim]
+            q_embed = hidden_states[i][query_mask]  # [1, dim]
 
-        query_embeds_expanded = query_embeds.expand_as(doc_embeds)
-        scores = torch.nn.functional.cosine_similarity(
-            doc_embeds, query_embeds_expanded, dim=-1
-        ).squeeze(-1)
+            doc_embeds.append(d_embeds)
+            query_embeds.append(q_embed)
+
+        doc_embeds = [self.projector(x) for x in doc_embeds]
+        query_embeds = [self.projector(x) for x in query_embeds]
+
+        scores = []
+
+        for q, d in zip(query_embeds, doc_embeds):
+            q = q.expand_as(d)
+
+            s = torch.nn.functional.cosine_similarity(d, q, dim=-1)
+
+            scores.append(s)
 
         loss = None
         if labels is not None:
-            scores = torch.nn.functional.log_softmax(scores, dim=-1)
-            loss = self.loss_func(scores, labels)
+            losses = []
+
+            for s, target in zip(scores, labels):
+                log_probs = torch.nn.functional.log_softmax(s, dim=-1)
+
+                loss = self.loss_func(
+                    log_probs,
+                    target,
+                )
+
+                losses.append(loss)
+
+            loss = torch.stack(losses).mean()
 
         return CausalLMOutputWithScores(
             loss=loss,
