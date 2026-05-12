@@ -19,8 +19,8 @@ from src.dataset.product_mapping import (
     ID_TO_PRODUCT,
     product_name_to_id,
 )
-from src.dataset.prompts import SYSTEM_PROMPT, USER_PROMPT
-from src.dataset.schemas import D30Item, DatasetItem, Distribution, ItemClass
+from src.dataset.prompts import LABEL_SYSTEM_PROMPT, LABEL_USER_PROMPT, AUGMENT_SYSTEM_PROMPT, AUGMENT_USER_PROMPT
+from src.dataset.schemas import D30Item, DatasetItem, Distribution, ItemClass, ItemSource
 from src.utils import format_docs_prompts_func
 
 
@@ -63,21 +63,13 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
 
             products = combination["content"]
             products = [p for p in products if random.random() > dataset_config.dropout]
-            embedded_item = format_docs_prompts_func(
-                query="\n".join(current_dialog),
-                docs=[ID_TO_PRODUCT[prod_id]["description"] for prod_id in products],
-            )
-            payload = {
-                "text": embedded_item,
-            }
-            response = requests.post(
-                "http://91.211.217.36:8022/api/v1/reranker/tokenize", json=payload
-            ).json()
+            
 
             dataset.append(
                 DatasetItem(
                     item_id=item.item_id + f"_{a}_{b}",
                     item_class=item_class,
+                    item_source=ItemSource.BASE,
                     base_product=combination["main_product"],
                     products=products,
                     dialog=current_dialog,
@@ -92,7 +84,6 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
                         "dialog_len": dialog_len,
                         "source_product": item.products[0],
                     },
-                    len_tokens=len(response["data"]),
                 )
             )
     with open("src/dataset/data/dataset.json", "w") as f:
@@ -105,23 +96,75 @@ def create_dataset(source_dataset: list[D30Item], dataset_config: DatasetConfig)
     return dataset
 
 
-def label_dataset(dataset: list[DatasetItem], client: LLM):
+def enrich_dataset(dataset: list[DatasetItem], client: LLM):
+    new_items = []
     message_list = []
     for item in dataset:
         prev_dialog = "\n".join(item.metadata["prev_dialog"])
         products_with_descriptions = [
-            ID_TO_PRODUCT[prod_id]["description"]
+            {k: v for k, v in ID_TO_PRODUCT[prod_id].items() if k in ["id", "description"]}
             for prod_id in [item.base_product] + item.products
         ]
         products_with_descriptions = json.dumps(
             products_with_descriptions, ensure_ascii=False, indent=2
         )
         messages = []
-        messages.append({"role": "system", "content": SYSTEM_PROMPT})
+        messages.append({"role": "system", "content": AUGMENT_SYSTEM_PROMPT})
         messages.append(
             {
                 "role": "user",
-                "content": USER_PROMPT.format(
+                "content": AUGMENT_USER_PROMPT.format(
+                    dialog="\n".join(item.dialog),
+                    prev_dialog=prev_dialog,
+                    products_with_descriptions=products_with_descriptions,
+                ),
+            }
+        )
+        message_list.append(messages)
+    responses = client.call_sync(message_list=message_list)
+    new_dataset = []
+    for item, response in zip(dataset, responses):
+        try:
+            if response is None:
+                raise ValueError(f"Response is None")
+            item = DatasetItem(**item.model_dump())
+            item.dialog = json_repair.loads(response["response"])["dialog"]
+            item.item_source = ItemSource.AUGMENTED
+            new_dataset.append(item)
+        except Exception as e:
+            print(f"Error processing item {item.item_id}: {e}")
+            continue
+
+    dataset.extend(new_dataset)
+    with open("src/dataset/data/enriched.json", "w") as f:
+        json.dump(
+            [item.model_dump(mode="json") for item in dataset],
+            f,
+            ensure_ascii=False,
+            indent=4,
+        )
+    return dataset
+
+
+
+def label_dataset(dataset: list[DatasetItem], client: LLM):
+    message_list = []
+    random.shuffle(dataset)
+    for item in dataset:
+        prev_dialog = "\n".join(item.metadata["prev_dialog"])
+        products_with_descriptions = [
+            {k: v for k, v in ID_TO_PRODUCT[prod_id].items() if k in ["id", "description"]}
+            for prod_id in [item.base_product] + item.products
+        ]
+        products_with_descriptions = json.dumps(
+            products_with_descriptions, ensure_ascii=False, indent=2
+        )
+        messages = []
+        messages.append({"role": "system", "content": LABEL_SYSTEM_PROMPT})
+        messages.append(
+            {
+                "role": "user",
+                "content": LABEL_USER_PROMPT.format(
                     dialog="\n".join(item.dialog),
                     prev_dialog=prev_dialog,
                     products_with_descriptions=products_with_descriptions,
@@ -140,10 +183,10 @@ def label_dataset(dataset: list[DatasetItem], client: LLM):
                 Distribution(**dist) for dist in response["gt_task_distribution"]
             ]
             item.gt_product_distribution = [
-                Distribution(**dist) for dist in response["gt_product_distribution"]
+                Distribution(name=dist["id"], probability=dist["probability"]) for dist in response["gt_product_distribution"]
             ]
             item.gt_product_distribution_with_context = [
-                Distribution(**dist)
+                Distribution(name=dist["id"], probability=dist["probability"])
                 for dist in response["gt_product_distribution_with_context"]
             ]
 
@@ -192,13 +235,20 @@ if __name__ == "__main__":
     with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
         dataset = [D30Item(**item) for item in json.load(f)]
     config = DatasetConfig()
+    client=LLM.from_giga_token(
+        token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
+    )
     dataset = create_dataset(dataset, config)
-    # label_dataset(
-    #     dataset,
-    #     client=LLM.from_giga_token(
-    #         token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
-    #     ),
+    dataset = enrich_dataset(dataset, client)
+    label_dataset(
+        dataset,
+        client=client,
+    )
+    # upload_to_huggingface(
+    #     dataset_path=Path(__file__).parent / "data",
+    #     repo_id="Hinter-Models/product-task-router",
     # )
+
     # download_dataset(
     #     dataset_path=Path(__file__).parent / "data",
     #     repo_id="Hinter-Models/product-task-router",
