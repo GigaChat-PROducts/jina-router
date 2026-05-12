@@ -4,12 +4,14 @@ from typing import Optional
 import torch
 from torch import nn
 from transformers.models.qwen3 import modeling_qwen3
+from transformers.modeling_outputs import CausalLMOutputWithPast
 
 
 @dataclass
-class CausalLMOutputWithScores:
-    scores: list[torch.Tensor]
-    loss: Optional[torch.Tensor] = None
+class CausalLMOutputWithScores(CausalLMOutputWithPast):
+    scores: Optional[torch.FloatTensor] = None
+    query_embeds: Optional[torch.FloatTensor] = None
+    doc_embeds: Optional[torch.FloatTensor] = None
 
 
 class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
@@ -96,8 +98,14 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
                 losses.append(loss)
 
             loss = torch.stack(losses).mean()
+        
+        scores = torch.stack(scores)
 
         return CausalLMOutputWithScores(
             loss=loss,
+            logits=None,
             scores=scores,
+            past_key_values=outputs.past_key_values,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
         )

@@ -10,7 +10,7 @@ from src.constants.cross_encoder_descriptions import (
     ID_TO_DESCRIPTION,
     product_name_to_id,
 )
-from src.dataset import DatasetItem, ItemClass
+from src.dataset import DatasetItem, ItemClass, Distribution
 from src.training.tokenizer import ModelTokenizer, TokenizerOutput
 
 DATASET_PATH = (
@@ -30,8 +30,9 @@ class TrainingDatasetItem(BaseModel):
 
 @dataclass
 class EncodedDatasetItem:
-    inputs: TokenizerOutput
-    labels: torch.Tensor
+    query: str
+    documents: list[str]
+    labels: list[float]
 
 
 class TrainingDataset:
@@ -46,63 +47,31 @@ class TrainingDataset:
 
         self.dataset = []
 
-        def sort_labels(item, keys):
-            labels = []
+        def extract_labels(keys: list[str], distributions: list[Distribution]) -> list[float]:
+            res = []
             for key in keys:
-                for distribution in (
-                    item.gt_task_distribution + item.gt_product_distribution
-                ):
-                    if product_name_to_id(distribution.name) == key:
-                        labels.append(distribution.probability)
-                        continue
-                    if (
-                        " " in distribution.name
-                        and product_name_to_id(
-                            distribution.name[: distribution.name.find(" ")]
-                        )
-                        == key
-                    ):
-                        labels.append(distribution.probability)
+                for distr in distributions:
+                    if distr.name == key:
+                        res.append(distr.probability)
+                        break
+                else:
+                    raise ValueError(f"{key=}")
+            return res
 
-            if len(labels) != len(keys):
-                raise ValueError(f"Error in generation {keys=} {labels=}")
-            return labels
-
-        error_count = 0
-        data_sources = 0
-        products = 0
-        for d in data:
+        task_keys = ["documents", "best_practices"]
+        for d in data[:100]:
             item = DatasetItem(**d)
             if item.item_class != mode:
                 continue
             dialog = "\n".join(item.dialog)
-            try:
-                self.dataset.append(
-                    TrainingDatasetItem(
-                        query=dialog,
-                        document_keys=["documents", "best_practices"],
-                        labels=sort_labels(item, ["factology", "sales_practices"]),
-                    )
-                )
-                data_sources += 1
-            except ValueError:
-                error_count += 1
-
-            document_keys = [item.base_product] + item.products
-            try:
-                self.dataset.append(
-                    TrainingDatasetItem(
-                        query=dialog,
-                        document_keys=document_keys,
-                        labels=sort_labels(item, document_keys),
-                    )
-                )
-                products += 1
-            except ValueError:
-                error_count += 1
+            task_labels = extract_labels(keys=task_keys, distributions=item.gt_task_distribution)
+            self.dataset.append(TrainingDatasetItem(query=dialog, document_keys=task_keys, labels=task_labels))
+            product_keys = [item.base_product] + item.products
+            product_labels = extract_labels(keys=product_keys, distributions=item.gt_product_distribution)
+            self.dataset.append(TrainingDatasetItem(query=dialog, document_keys=product_keys, labels=product_labels))
+            
+            
         print(f"{mode=}")
-        print(f"{error_count=}")
-        print(f"{data_sources=}, {products=}")
         self.tokenizer = tokenizer
 
     def __len__(self):
@@ -119,8 +88,29 @@ class TrainingDataset:
         labels = item.labels
         if len(labels) != len(documents):
             raise ValueError(f"{item.model_dump_json()}")
+        return EncodedDatasetItem(
+            query=query,
+            documents=documents,
+            labels=labels,
+        )
+
+
+    def collate_fn(self, batch: list[EncodedDatasetItem]):
+        max_length = 2560
+        texts = []
+        labels = []
+        for data in batch:
+            text = self.tokenizer.format_data(
+                query=data.query,
+                docs=data.documents,
+                max_length=max_length,
+            )
+            texts.append(text)
+            labels.append(torch.Tensor(data.labels))
+        
+        inputs = self.tokenizer.tokenize(texts)
+
         return {
-            "query": query,
-            "documents": documents,
+            **inputs,
             "labels": labels,
         }
