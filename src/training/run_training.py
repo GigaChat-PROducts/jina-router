@@ -4,14 +4,13 @@ import os
 
 import mlflow
 import torch
-from torch.nn.utils.rnn import pad_sequence
 from transformers import Trainer
 
 from src.dataset.schemas import ItemClass
 from src.training.config import TrainingConfig
 from src.training.dataset import TrainingDataset
 from src.training.modeling import JinaForRanking
-from src.training.tokenizer import ModelTokenizer
+from src.training.tokenizer import ModelTokenizer, ModelTokenizerConfig
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -20,10 +19,11 @@ logging.basicConfig(level=logging.INFO)
 def collate_fn(batch):
     return {
         "input_ids": torch.Tensor([item.inputs.input_ids.squeeze(0) for item in batch]),
-        "attention_mask": torch.Tensor([item.inputs.attention_mask.squeeze(0) for item in batch]),
+        "attention_mask": torch.Tensor(
+            [item.inputs.attention_mask.squeeze(0) for item in batch]
+        ),
         "labels": torch.Tensor([item.labels for item in batch]),
     }
-
 
 
 def setup_mlflow(cfg: TrainingConfig):
@@ -51,7 +51,9 @@ def main():
 
     setup_mlflow(cfg)
 
-    tokenizer = ModelTokenizer()
+    tokenizer_config = ModelTokenizerConfig()
+
+    tokenizer = ModelTokenizer(tokenizer_config)
     train_ds = TrainingDataset(mode=ItemClass.TRAIN, tokenizer=tokenizer)
     eval_ds = TrainingDataset(mode=ItemClass.VAL, tokenizer=tokenizer)
 

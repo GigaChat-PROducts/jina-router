@@ -21,9 +21,6 @@ TASK_TO_LABEL = {
 }
 
 
-# TODO transform to pydantic
-
-
 @dataclass
 class EvaluationConfig:
     reranker_endpoint: str

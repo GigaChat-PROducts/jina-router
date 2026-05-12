@@ -28,9 +28,7 @@ class TrainingConfig(BaseSettings):
     mlflow_experiment_name: str = Field(default="jina-router-training")
 
     # Misc
-    # TODO BF16
-    # TODO CLEAR DATASET and multihead support
-    # TODO single item length
+    # TODO CLEAR DATASET
     seed: int = Field(default=42)
     bf16: bool = Field(default=True)
 
