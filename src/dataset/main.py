@@ -232,22 +232,22 @@ def download_dataset(repo_id: str, dataset_path: Path):
 
 if __name__ == "__main__":
     load_dotenv(".env")
-    with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
-        dataset = [D30Item(**item) for item in json.load(f)]
-    config = DatasetConfig()
-    client=LLM.from_giga_token(
-        token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
-    )
-    dataset = create_dataset(dataset, config)
-    dataset = enrich_dataset(dataset, client)
-    label_dataset(
-        dataset,
-        client=client,
-    )
-    # upload_to_huggingface(
-    #     dataset_path=Path(__file__).parent / "data",
-    #     repo_id="Hinter-Models/product-task-router",
+    # with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
+    #     dataset = [D30Item(**item) for item in json.load(f)]
+    # config = DatasetConfig()
+    # client=LLM.from_giga_token(
+    #     token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
     # )
+    # dataset = create_dataset(dataset, config)
+    # dataset = enrich_dataset(dataset, client)
+    # label_dataset(
+    #     dataset,
+    #     client=client,
+    # )
+    upload_to_huggingface(
+        dataset_path=Path(__file__).parent / "data",
+        repo_id="Hinter-Models/product-task-router",
+    )
 
     # download_dataset(
     #     dataset_path=Path(__file__).parent / "data",
