@@ -7,7 +7,6 @@ from src.utils import format_docs_prompts_func
 
 
 class ModelTokenizerConfig(BaseSettings):
-    max_length: int = 2560
     instruction: str | None = None
     no_thinking: bool = True
     special_token: str | None = "\n"
@@ -26,37 +25,23 @@ class ModelTokenizer:
         }
         self.config = config
 
-    def tokenize(self, text: str) -> TokenizerOutput:
-        inputs = self.tokenizer(
-            [text],
+    def tokenize(self, texts: list[str]):
+        return self.tokenizer(
+            texts,
             return_tensors="pt",
-            padding="max_length",
-            max_length=self.config.max_length,
-        )
-
-        input_ids: torch.LongTensor = inputs["input_ids"]
-        attention_mask: torch.Tensor = inputs["attention_mask"]
-
-        if input_ids.shape[1] > self.config.max_length:
-            raise ValueError(
-                f"Tokenized input exceeds maximum length of {self.config.max_length} tokens"
-            )
-
-        return TokenizerOutput(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
+            padding="longest",
         )
 
 
-    def format_and_tokenize(
+    def format_data(
         self,
         query: str,
         docs: list[str],
+        max_length: int,
     ):
         instruction = self.config.instruction
         no_thinking = self.config.no_thinking
         special_token = self.config.special_token
-        max_length = self.config.max_length
 
         formatted_input = format_docs_prompts_func(
             query=query,
@@ -67,21 +52,27 @@ class ModelTokenizer:
         )
         inputs = self.tokenizer.encode(formatted_input)
         if len(inputs) <= max_length:
-            return self.tokenize(formatted_input)
+            return formatted_input
         shift = len(inputs) - max_length
         query_inputs = self.tokenizer.encode(query)
-        if shift >= len(query_inputs):
+        if shift > len(query_inputs):
             raise ValueError(
-                "Query is too short to even truncate to fit in the maximum length"
+                f"Query is too short to even truncate to fit in the maximum length.\n {shift=}, Query inputs length: {len(query_inputs)}"
             )
         truncated_query = self.tokenizer.decode(query_inputs[:-shift])
         if special_token is not None:
             truncated_query = truncated_query[truncated_query.find(special_token) + 1 :]
-        formatted_input = format_docs_prompts_func(
+        return format_docs_prompts_func(
             query=truncated_query,
             docs=docs,
             instruction=instruction,
             special_tokens=self.special_tokens,
             no_thinking=no_thinking,
         )
-        return self.tokenize(formatted_input)
+
+
+if __name__ == "__main__":
+    config = ModelTokenizerConfig()
+    tokenizer = ModelTokenizer(config)
+    val = tokenizer.tokenize(["Hey", "Hi"])
+    pass

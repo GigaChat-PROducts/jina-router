@@ -10,7 +10,7 @@ class TrainingConfig(BaseSettings):
     per_device_train_batch_size: int = Field(default=1)
     per_device_eval_batch_size: int = Field(default=1)
     learning_rate: float = Field(default=5e-5)
-    warmup_steps: int = Field(default=20)
+    warmup_steps: int = Field(default=1)
     weight_decay: float = Field(default=0.01)
     max_grad_norm: float = Field(default=1.0)
     gradient_accumulation_steps: int = Field(default=1)
@@ -18,9 +18,9 @@ class TrainingConfig(BaseSettings):
 
     # Logging / saving
     eval_strategy: str = Field(default="steps")
-    eval_steps: int = Field(default=50)
-    logging_steps: int = Field(default=10)
-    save_steps: int = Field(default=50)
+    eval_steps: int = Field(default=5)
+    logging_steps: int = Field(default=1)
+    save_steps: int = Field(default=500)
     save_total_limit: int = Field(default=1)
 
     # MLflow defaults; tracking server is already running locally

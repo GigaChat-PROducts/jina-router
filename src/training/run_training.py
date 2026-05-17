@@ -16,16 +16,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def collate_fn(batch):
-    return {
-        "input_ids": torch.Tensor([item.inputs.input_ids.squeeze(0) for item in batch]),
-        "attention_mask": torch.Tensor(
-            [item.inputs.attention_mask.squeeze(0) for item in batch]
-        ),
-        "labels": torch.Tensor([item.labels for item in batch]),
-    }
-
-
 def setup_mlflow(cfg: TrainingConfig):
     os.environ["MLFLOW_TRACKING_URI"] = cfg.mlflow_tracking_uri
     mlflow.set_tracking_uri(cfg.mlflow_tracking_uri)
@@ -66,6 +56,7 @@ def main():
         args=training_args,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
+        data_collator=train_ds.collate_fn
     )
 
     with mlflow.start_run():
