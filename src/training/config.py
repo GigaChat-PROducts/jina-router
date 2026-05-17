@@ -27,8 +27,6 @@ class TrainingConfig(BaseSettings):
     mlflow_tracking_uri: str = Field(default="http://localhost:5600")
     mlflow_experiment_name: str = Field(default="jina-router-training")
 
-    # Misc
-    # TODO CLEAR DATASET
     seed: int = Field(default=42)
     bf16: bool = Field(default=True)
 
@@ -61,6 +59,5 @@ class TrainingConfig(BaseSettings):
             seed=self.seed,
             bf16=self.bf16,
             report_to=["mlflow"],
-            run_name="jina-reranker",
             eval_on_start=False,
         )

@@ -68,7 +68,7 @@ def main():
         eval_dataset=eval_ds,
     )
 
-    with mlflow.start_run(run_name="jina-reranker"):
+    with mlflow.start_run():
         mlflow.log_params(cfg.model_dump())
         trainer.train()
 
