@@ -15,10 +15,6 @@ from src.dataset.schemas import DatasetItem, Distribution, ItemClass
 from src.evaluation.quotas import QuotaTask, RerankQuotaPlanner, StaticQuotaPlanner
 
 Metric = Literal["kl_div", "mse"]
-TASK_TO_LABEL = {
-    "documents": "factology",
-    "best_practices": "sales_practices",
-}
 
 
 @dataclass
@@ -128,7 +124,7 @@ def _aggregate_predictions(
 ) -> tuple[list[Distribution], list[Distribution]]:
     per_task = {task: sum(product_map.values()) for task, product_map in quotas.items()}
     task_distribution = _to_distributions(
-        {TASK_TO_LABEL.get(task, task): value for task, value in per_task.items()}
+        {task: value for task, value in per_task.items()}
     )
 
     per_product: dict[str, int] = {}

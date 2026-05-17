@@ -4,6 +4,7 @@ import os
 import random
 from datetime import datetime
 from pathlib import Path
+import uuid
 
 import json_repair
 import numpy as np
@@ -163,6 +164,7 @@ def label_dataset(dataset: list[DatasetItem], client: LLM):
     message_list = []
     random.shuffle(dataset)
     for item in dataset:
+        item.item_id = str(uuid.uuid4())
         prev_dialog = "\n".join(item.metadata["prev_dialog"])
         products_with_descriptions = [
             {

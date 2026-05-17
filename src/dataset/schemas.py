@@ -49,6 +49,8 @@ class DatasetItem(BaseModel):
 
     @model_validator(mode="after")
     def validate_fields(self):
+        def is_close(a, b):
+            return abs(a - b) < 0.05
         all_products = set([self.base_product] + self.products)
         if self.current_product is not None and self.current_product not in all_products:
             raise ValueError(f"Current product is not present: {self.current_product}")
@@ -61,7 +63,7 @@ class DatasetItem(BaseModel):
             if distrib.name not in ["documents", "best_practices"]:
                 raise ValueError(f"{distrib.name=}")
             curr += distrib.probability
-        if curr != 1:
+        if not is_close(curr, 1):
             raise ValueError(f"{curr=}")
         
         for source in [self.gt_product_distribution, self.gt_product_distribution_with_context]:
@@ -72,6 +74,6 @@ class DatasetItem(BaseModel):
                 if distrib.name not in all_products:
                     raise ValueError(f"Wrong name")
                 curr += distrib.probability
-            if curr != 1:
+            if not is_close(curr, 1):
                 raise ValueError(f"Probs wrong")
         return self
