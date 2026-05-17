@@ -6,12 +6,10 @@ from pathlib import Path
 import torch
 from pydantic import BaseModel
 
-from src.constants.cross_encoder_descriptions import (
-    ID_TO_DESCRIPTION,
-    product_name_to_id,
-)
-from src.dataset import DatasetItem, ItemClass, Distribution
-from src.training.tokenizer import ModelTokenizer, TokenizerOutput
+from src.constants.cross_encoder_descriptions import ID_TO_DESCRIPTION
+from src.dataset import DatasetItem, Distribution, ItemClass
+from src.training.model_constants import MAX_SEQUENCE_LENGTH
+from src.training.tokenizer import ModelTokenizer
 
 DATASET_PATH = (
     Path(__file__).parent.parent / "dataset" / "data" / "labeled_dataset.json"
@@ -47,7 +45,9 @@ class TrainingDataset:
 
         self.dataset = []
 
-        def extract_labels(keys: list[str], distributions: list[Distribution]) -> list[float]:
+        def extract_labels(
+            keys: list[str], distributions: list[Distribution]
+        ) -> list[float]:
             res = []
             for key in keys:
                 for distr in distributions:
@@ -64,13 +64,24 @@ class TrainingDataset:
             if item.item_class != mode:
                 continue
             dialog = "\n".join(item.dialog)
-            task_labels = extract_labels(keys=task_keys, distributions=item.gt_task_distribution)
-            self.dataset.append(TrainingDatasetItem(query=dialog, document_keys=task_keys, labels=task_labels))
+            task_labels = extract_labels(
+                keys=task_keys, distributions=item.gt_task_distribution
+            )
+            self.dataset.append(
+                TrainingDatasetItem(
+                    query=dialog, document_keys=task_keys, labels=task_labels
+                )
+            )
             product_keys = [item.base_product] + item.products
-            product_labels = extract_labels(keys=product_keys, distributions=item.gt_product_distribution)
-            self.dataset.append(TrainingDatasetItem(query=dialog, document_keys=product_keys, labels=product_labels))
-            
-            
+            product_labels = extract_labels(
+                keys=product_keys, distributions=item.gt_product_distribution
+            )
+            self.dataset.append(
+                TrainingDatasetItem(
+                    query=dialog, document_keys=product_keys, labels=product_labels
+                )
+            )
+
         print(f"{mode=}")
         self.tokenizer = tokenizer
 
@@ -94,11 +105,11 @@ class TrainingDataset:
             labels=labels,
         )
 
-
     def collate_fn(self, batch: list[EncodedDatasetItem]):
-        max_length = 2560
+        max_length = MAX_SEQUENCE_LENGTH
         texts = []
         labels = []
+        max_docs = 0
         for data in batch:
             text = self.tokenizer.format_data(
                 query=data.query,
@@ -106,8 +117,14 @@ class TrainingDataset:
                 max_length=max_length,
             )
             texts.append(text)
-            labels.append(torch.Tensor(data.labels))
-        
+            max_docs = max(max_docs, len(data.documents))
+
+        for data in batch:
+            current_label = torch.Tensor(
+                data.labels + [0.0] * (max_docs - len(data.documents))
+            )
+            labels.append(current_label)
+
         inputs = self.tokenizer.tokenize(texts)
 
         return {

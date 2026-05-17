@@ -1,14 +1,13 @@
 import argparse
 import logging
-import os
 
-import mlflow
 import torch
 from transformers import Trainer
 
 from src.dataset.schemas import ItemClass
 from src.training.config import TrainingConfig
 from src.training.dataset import TrainingDataset
+from src.training.model_constants import MODEL_NAME
 from src.training.modeling import JinaForRanking
 from src.training.tokenizer import ModelTokenizer, ModelTokenizerConfig
 
@@ -16,13 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def setup_mlflow(cfg: TrainingConfig):
-    os.environ["MLFLOW_TRACKING_URI"] = cfg.mlflow_tracking_uri
-    mlflow.set_tracking_uri(cfg.mlflow_tracking_uri)
-    mlflow.set_experiment(cfg.mlflow_experiment_name)
-
-
-def load_model(base_name: str = "jinaai/jina-reranker-v3"):
+def load_model(base_name: str = MODEL_NAME):
     logger.info(f"Loading base model {base_name}")
     model = JinaForRanking.from_pretrained(base_name)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -39,8 +32,6 @@ def main():
     if args.output_dir:
         cfg.output_dir = args.output_dir
 
-    setup_mlflow(cfg)
-
     tokenizer_config = ModelTokenizerConfig()
 
     tokenizer = ModelTokenizer(tokenizer_config)
@@ -56,12 +47,10 @@ def main():
         args=training_args,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        data_collator=train_ds.collate_fn
+        data_collator=train_ds.collate_fn,
     )
 
-    with mlflow.start_run():
-        mlflow.log_params(cfg.model_dump())
-        trainer.train()
+    trainer.train()
 
 
 if __name__ == "__main__":

@@ -1,8 +1,7 @@
-import torch
 from pydantic_settings import BaseSettings
 from transformers import AutoTokenizer
 
-from src.training.schemas import TokenizerOutput
+from src.training.model_constants import MODEL_NAME
 from src.utils import format_docs_prompts_func
 
 
@@ -14,7 +13,7 @@ class ModelTokenizerConfig(BaseSettings):
 
 class ModelTokenizer:
     def __init__(self, config: ModelTokenizerConfig):
-        self.tokenizer = AutoTokenizer.from_pretrained("jinaai/jina-reranker-v3")
+        self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = (
                 self.tokenizer.eos_token or self.tokenizer.unk_token
@@ -31,7 +30,6 @@ class ModelTokenizer:
             return_tensors="pt",
             padding="longest",
         )
-
 
     def format_data(
         self,

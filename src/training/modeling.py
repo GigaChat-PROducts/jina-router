@@ -3,8 +3,8 @@ from typing import Optional
 
 import torch
 from torch import nn
-from transformers.models.qwen3 import modeling_qwen3
 from transformers.modeling_outputs import CausalLMOutputWithPast
+from transformers.models.qwen3 import modeling_qwen3
 
 
 @dataclass
@@ -34,7 +34,6 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         }
         self.doc_embed_token_id = 151670
         self.query_embed_token_id = 151671
-        self.loss_func = nn.KLDivLoss(reduction="sum")
 
     def forward(
         self,
@@ -89,23 +88,25 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
 
             for s, target in zip(scores, labels):
                 log_probs = torch.nn.functional.log_softmax(s, dim=-1)
+                target_len = s.shape[0]
 
-                loss = self.loss_func(
+                loss = torch.nn.functional.kl_div(
                     log_probs,
-                    target,
+                    target[:target_len],
+                    reduction="sum",
                 )
 
                 losses.append(loss)
 
             loss = torch.stack(losses).mean()
-        
-        scores = torch.stack(scores)
+
+        scores = [scores]
 
         return CausalLMOutputWithScores(
             loss=loss,
             logits=None,
             scores=scores,
-            past_key_values=outputs.past_key_values,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
+            # past_key_values=outputs.past_key_values,
+            # hidden_states=outputs.hidden_states,
+            # attentions=outputs.attentions,
         )
