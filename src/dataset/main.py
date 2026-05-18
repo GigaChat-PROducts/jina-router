@@ -2,9 +2,9 @@ import json
 import math
 import os
 import random
+import uuid
 from datetime import datetime
 from pathlib import Path
-import uuid
 
 import json_repair
 import numpy as np
@@ -254,24 +254,24 @@ if __name__ == "__main__":
     # with open("src/dataset/data/d30_full_dialogs.json", "r") as f:
     #     dataset = [D30Item(**item) for item in json.load(f)]
     # config = DatasetConfig()
-    client = LLM.from_giga_token(
-        token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
-    )
+    # client = LLM.from_giga_token(
+    #     token=os.environ["GIGACHAT_TOKEN"], model="GigaChat-2-Max", max_threads=5
+    # )
     # dataset = create_dataset(dataset, config)
     # dataset = enrich_dataset(dataset, client)
-    with open("src/dataset/data/enriched.json", "r") as f:
-        dataset = [DatasetItem(**item) for item in json.load(f)]
+    # with open("src/dataset/data/enriched.json", "r") as f:
+    #     dataset = [DatasetItem(**item) for item in json.load(f)]
 
-    label_dataset(
-        dataset,
-        client=client,
-    )
-    upload_to_huggingface(
-        dataset_path=Path(__file__).parent / "data",
-        repo_id="Hinter-Models/product-task-router",
-    )
-
-    # download_dataset(
+    # label_dataset(
+    #     dataset,
+    #     client=client,
+    # )
+    # upload_to_huggingface(
     #     dataset_path=Path(__file__).parent / "data",
     #     repo_id="Hinter-Models/product-task-router",
     # )
+
+    download_dataset(
+        dataset_path=Path(__file__).parent / "data",
+        repo_id="Hinter-Models/product-task-router",
+    )

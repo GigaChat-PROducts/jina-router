@@ -24,6 +24,9 @@ class ModelTokenizer:
         }
         self.config = config
 
+    def save_pretrained(self, output_dir: str):
+        return self.tokenizer.save_pretrained(output_dir)
+
     def tokenize(self, texts: list[str]):
         return self.tokenizer(
             texts,

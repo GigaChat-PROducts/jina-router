@@ -6,6 +6,9 @@ class TrainingConfig(BaseSettings):
     """Configuration for HF Trainer. Non-secret defaults live here; secrets via env."""
 
     output_dir: str = Field(default="./outputs")
+    final_dir_name: str = Field(default="final")
+    export_onnx: bool = Field(default=False)
+    onnx_opset: int = Field(default=17)
     num_train_epochs: int = Field(default=3)
     per_device_train_batch_size: int = Field(default=1)
     per_device_eval_batch_size: int = Field(default=1)

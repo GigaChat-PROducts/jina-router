@@ -5,6 +5,7 @@ from pathlib import Path
 
 import torch
 from pydantic import BaseModel
+from torch.utils.data import Dataset
 
 from src.constants.cross_encoder_descriptions import ID_TO_DESCRIPTION
 from src.dataset import DatasetItem, Distribution, ItemClass
@@ -33,7 +34,7 @@ class EncodedDatasetItem:
     labels: list[float]
 
 
-class TrainingDataset:
+class TrainingDataset(Dataset):
     def __init__(self, mode: ItemClass, tokenizer: ModelTokenizer):
         if not os.path.exists(DATASET_PATH):
             raise ValueError(
@@ -46,8 +47,11 @@ class TrainingDataset:
         self.dataset = []
 
         def extract_labels(
-            keys: list[str], distributions: list[Distribution]
+            keys: list[str], distributions: list[Distribution] | None
         ) -> list[float]:
+            if distributions is None:
+                raise ValueError(f"Missing distributions for {keys=}")
+
             res = []
             for key in keys:
                 for distr in distributions:
