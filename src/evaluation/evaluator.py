@@ -154,7 +154,7 @@ def build_default_config() -> EvaluationConfig:
     )
 
 
-def _build_planner(config: EvaluationConfig) -> StaticQuotaPlanner | RerankQuotaPlanner:
+def _build_planner(config: EvaluationConfig) -> RerankQuotaPlanner:
     token_limit = config.global_token_limit
     static_planner = StaticQuotaPlanner(
         global_token_limit=token_limit,

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import torch
-from modeling import JinaForRanking
+from src.training.modeling import JinaForRanking
 
 # Import 'export' instead of 'onnx_export_from_model'
 from optimum.exporters.onnx.convert import export
