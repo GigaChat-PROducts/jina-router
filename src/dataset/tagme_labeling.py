@@ -1,6 +1,7 @@
 import json
 import random
 from pathlib import Path
+from collections import defaultdict
 
 import polars as pl
 
@@ -40,6 +41,11 @@ if __name__ == "__main__":
     path = Path(__file__).parent / "data" / "labeled_dataset.json"
     with open(path, "r") as f:
         dataset = json.load(f)
+    
+    sizes = defaultdict(int)
+    for item in dataset:
+        sizes[item["item_source"]] += 1
+    print(sizes)
 
     random.shuffle(dataset)
     dataset = dataset[:size]
