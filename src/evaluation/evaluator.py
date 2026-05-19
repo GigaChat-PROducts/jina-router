@@ -67,38 +67,25 @@ def get_scores(
 ) -> float:
     target_map = {item.name: item.probability for item in target or []}
     predicted_map = {item.name: item.probability for item in predicted or []}
-    keys = sorted(set(target_map) | set(predicted_map))
-    if not keys:
-        return 0.0
-
-    target_values = [target_map.get(key, 0.0) for key in keys]
-    predicted_values = [predicted_map.get(key, 0.0) for key in keys]
-
-    target_sum = sum(target_values) or 1.0
-    predicted_sum = sum(predicted_values) or 1.0
-    target_values = [value / target_sum for value in target_values]
-    predicted_values = [value / predicted_sum for value in predicted_values]
+    if len(target_map) != len(predicted_map):
+        raise ValueError()
+    res = 0
 
     if metric == "mse":
-        return sum(
-            (target_value - predicted_value) ** 2
-            for target_value, predicted_value in zip(
-                target_values,
-                predicted_values,
-                strict=False,
-            )
-        ) / len(keys)
-    if metric == "kl_div":
+        res = sum(
+            (target_map[key] - predicted_map[key]) ** 2 for key in target_map
+        ) / len(target_map)
+
+    elif metric == "kl_div":
         eps = 1e-12
-        return sum(
-            target_value * math.log((target_value + eps) / (predicted_value + eps))
-            for target_value, predicted_value in zip(
-                target_values,
-                predicted_values,
-                strict=False,
-            )
-        )
-    raise ValueError(f"Unsupported metric: {metric}")
+        res = sum(
+            predicted_map[key] * math.log((predicted_map[key] + eps) / (target_map[key] + eps))
+            for key in target_map
+        ) / len(target_map)
+    else:
+        raise ValueError(f"Unsupported metric: {metric}")
+
+    return res
 
 
 def _to_distributions(
@@ -111,11 +98,8 @@ def _to_distributions(
     result = []
     for name, quota in values.items():
         if quota <= 0:
-            continue
-        final_name = (
-            ID_TO_PRODUCT[name]["name"] if map_name and name in ID_TO_PRODUCT else name
-        )
-        result.append(Distribution(name=final_name, probability=quota / total))
+            raise ValueError
+        result.append(Distribution(name=name, probability=quota / total))
     return result
 
 

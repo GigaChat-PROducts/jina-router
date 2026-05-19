@@ -142,7 +142,7 @@ class RerankQuotaPlanner(QuotaPlanner):
                 continue
             result.append(
                 {
-                    "name": product_id,
+                    "id": product_id,
                     "description": product["description"],
                 }
             )
@@ -183,7 +183,7 @@ class RerankQuotaPlanner(QuotaPlanner):
         task_items = self._resolve_data_subset(task_names)
         product_items = self._resolve_product_subset(products)
         product_score_multipliers = self._resolve_product_score_multipliers(
-            product_names=[item["name"] for item in product_items],
+            product_names=[item["id"] for item in product_items],
             base_product=base_product,
             current_product=current_product,
             future_product=future_product,
@@ -246,14 +246,14 @@ class RerankQuotaPlanner(QuotaPlanner):
         }
 
         weighted_product_scores = [
-            self._multiply_score(score, product_score_multipliers[item["name"]])
-            for item, score in zip(product_items, product_scores, strict=False)
+            self._multiply_score(score, product_score_multipliers[item["id"]])
+            for item, score in zip(product_items, product_scores, strict=True)
         ]
 
         product_quotas_by_task: dict[str, dict[str, int]] = {}
         for task_name, task_quota in task_quotas.items():
             product_quotas_by_task[task_name] = {
-                item["name"]: quota
+                item["id"]: quota
                 for item, quota in zip(
                     product_items,
                     _quota_from_scores(
