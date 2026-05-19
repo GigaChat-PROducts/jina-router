@@ -5,8 +5,8 @@ from transformers import AutoTokenizer
 
 from src.training.modeling import JinaForRanking
 
-MODEL_DIR = "outputs/checkpoint-50/final"
-CHECKPOINT_DIR = "outputs/checkpoint-50"
+MODEL_DIR = "outputs/base/final"
+CHECKPOINT_DIR = "/home/Sashavav/git/mef_models/models/jina_reranker"
 
 DOC_TOKEN_ID = 151670
 

@@ -29,21 +29,28 @@ class JinaRerankerOnnxConfig(TextEncoderOnnxConfig):
 
     @property
     def outputs(self):
-        return {"scores": {0: "batch_size", 1: "num_docs"}}
+        return {"scores": {0: "batch_size", 1: "sequence_length"}}
 
 
-def _load_tokenizer(source_dir: Path):
+def _load_tokenizer(source: Path | str, *, from_hub: bool = False):
+    """Load tokenizer from local path or HF Hub."""
     try:
-        return AutoTokenizer.from_pretrained(source_dir)
+        if from_hub:
+            return AutoTokenizer.from_pretrained(str(source))
+        return AutoTokenizer.from_pretrained(Path(source))
     except (OSError, ValueError):
-        return AutoTokenizer.from_pretrained(MODEL_NAME)
+        # Fallback to default MODEL_NAME if local load fails
+        if not from_hub:
+            return AutoTokenizer.from_pretrained(MODEL_NAME)
+        raise
 
 
-def _write_model_card(output_dir: Path, source_dir: Path, onnx_path: Path, opset: int):
+def _write_model_card(output_dir: Path, source: str | Path, onnx_path: Path, opset: int, *, from_hub: bool = False):
     readme_path = output_dir / "README.md"
     if readme_path.exists():
         return
 
+    source_label = f"HF Hub `{source}`" if from_hub else f"`{source}`"
     content = f"""---
 library_name: transformers
 tags:
@@ -53,7 +60,7 @@ tags:
 
 # Jina reranker export
 
-This folder was exported from `{source_dir}`.
+This folder was exported from {source_label}.
 
 ## Artifacts
 
@@ -70,20 +77,41 @@ This folder was exported from `{source_dir}`.
 
 
 def export_model_bundle(
-    source_model_dir: str | Path,
+    source_model_dir: str | Path | None = None,
     output_dir: str | Path | None = None,
     *,
-    tokenizer_source_dir: str | Path | None = None,
+    hf_model_id: str | None = None,
+    tokenizer_source: str | Path | None = None,
     opset: int = 18,
     push_to_hf: str | None = None,
     skip_onnx_export: bool = False,
 ):
-    source_model_dir = Path(source_model_dir)
-    output_dir = (
-        Path(output_dir) if output_dir is not None else source_model_dir / "final"
-    )
-    tokenizer_source_dir = (
-        Path(tokenizer_source_dir) if tokenizer_source_dir else source_model_dir
+    """
+    Export a Jina reranker bundle to ONNX.
+    
+    Args:
+        source_model_dir: Local directory with trained model (mutually exclusive with hf_model_id)
+        hf_model_id: Hugging Face model ID to load from hub (e.g., 'jinaai/jina-reranker-v1-base-en')
+        output_dir: Destination directory for export bundle
+        tokenizer_source: Optional directory or HF ID for tokenizer
+        opset: ONNX opset version
+        push_to_hf: HF repo ID to push the bundle to
+        skip_onnx_export: Skip ONNX conversion, use existing model.onnx
+    """
+    # Resolve source: either local path or HF hub ID
+    if hf_model_id:
+        source_identifier = hf_model_id
+        from_hub = True
+        model_path_for_save = output_dir  # Save artifacts to output when loading from hub
+    elif source_model_dir:
+        source_identifier = Path(source_model_dir)
+        from_hub = False
+        model_path_for_save = source_identifier
+    else:
+        raise ValueError("Either source_model_dir or hf_model_id must be provided")
+
+    output_dir = Path(output_dir) if output_dir is not None else (
+        source_identifier / "final" if isinstance(source_identifier, Path) else Path("exported") / source_identifier.split("/")[-1]
     )
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -98,17 +126,30 @@ def export_model_bundle(
         print(f"⏭️ Skipping ONNX export. Using existing model at {onnx_path}")
     else:
         print("🔄 Starting ONNX export...")
+        
         # Load model & tokenizer
-        model = JinaForRanking.from_pretrained(source_model_dir, trust_remote_code=True)
+        model = JinaForRanking.from_pretrained(
+            source_identifier if from_hub else source_model_dir,
+            trust_remote_code=True
+        )
         model.eval()
-        tokenizer = _load_tokenizer(tokenizer_source_dir)
+        
+        tokenizer = _load_tokenizer(
+            tokenizer_source or source_identifier,
+            from_hub=from_hub or (tokenizer_source and str(tokenizer_source) not in [".", "./"])
+        )
 
         # CRITICAL: Export on CPU even for GPU inference.
         model = model.cpu()
 
         # Warm-up to initialize lazy buffers
-        with open("src/training/input_example.txt") as f:
-            input_example = f.read()
+        try:
+            with open("src/training/input_example.txt") as f:
+                input_example = f.read()
+        except FileNotFoundError:
+            # Fallback example if file missing
+            input_example = "What is the capital of France? [SEP] Paris is the capital of France."
+            
         dummy = tokenizer(input_example, return_tensors="pt")
         with torch.no_grad():
             _ = model(**dummy)
@@ -122,8 +163,6 @@ def export_model_bundle(
         # Configure & export
         onnx_config = JinaRerankerOnnxConfig(model.config)
         
-        # Suppress harmless tracer warnings
-
         export(
             model=model,
             config=onnx_config,
@@ -132,15 +171,17 @@ def export_model_bundle(
         )
 
         metadata = {
-            "source_model_dir": str(source_model_dir),
-            "tokenizer_source_dir": str(tokenizer_source_dir),
+            "source_model_dir": str(source_model_dir) if source_model_dir else None,
+            "hf_model_id": hf_model_id,
+            "tokenizer_source": str(tokenizer_source) if tokenizer_source else None,
             "output_dir": str(output_dir),
             "onnx_path": str(onnx_path),
             "opset": opset,
             "model_class": model.__class__.__name__,
+            "loaded_from_hub": from_hub,
         }
         (output_dir / "onnx_export.json").write_text(json.dumps(metadata, indent=2))
-        _write_model_card(output_dir, source_model_dir, onnx_path, opset)
+        _write_model_card(output_dir, source_identifier, onnx_path, opset, from_hub=from_hub)
         print(f"✅ ONNX export complete: {onnx_path}")
 
     # 🚀 Push to Hugging Face Hub if requested
@@ -152,7 +193,7 @@ def export_model_bundle(
             folder_path=str(output_dir),
             repo_id=push_to_hf,
             repo_type="model",
-            commit_message="Upload ONNX exported Jina reranker bundle",
+            commit_message=f"Upload ONNX exported Jina reranker bundle (from {'HF Hub' if from_hub else 'local checkpoint'})",
         )
         print(f"✅ Successfully pushed to https://huggingface.co/{push_to_hf}")
     elif not skip_onnx_export:
@@ -165,18 +206,29 @@ def main():
     parser = argparse.ArgumentParser(
         description="Export a trained Jina reranker bundle to ONNX."
     )
-    parser.add_argument(
-        "source_model_dir", help="Directory containing the trained model or checkpoint"
+    
+    # Mutually exclusive group: local checkpoint OR HF model ID
+    source_group = parser.add_mutually_exclusive_group(required=True)
+    source_group.add_argument(
+        "source_model_dir", 
+        nargs="?", 
+        help="Directory containing the trained model or checkpoint (mutually exclusive with --hf-model-id)"
     )
+    source_group.add_argument(
+        "--hf-model-id",
+        default=None,
+        help="Hugging Face model ID to load base model from (e.g., 'jinaai/jina-reranker-v1-base-en'). Mutually exclusive with source_model_dir."
+    )
+    
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Destination directory for the export bundle. Defaults to <source_model_dir>/final.",
+        help="Destination directory for the export bundle. Defaults to <source_model_dir>/final or ./exported/<model_name>.",
     )
     parser.add_argument(
-        "--tokenizer-source-dir",
+        "--tokenizer-source",
         default=None,
-        help="Optional directory to load tokenizer files from. Defaults to source_model_dir.",
+        help="Optional directory or HF model ID to load tokenizer files from. Defaults to source.",
     )
     parser.add_argument(
         "--opset", type=int, default=18, help="ONNX opset version to export with."
@@ -196,7 +248,8 @@ def main():
     export_model_bundle(
         source_model_dir=args.source_model_dir,
         output_dir=args.output_dir,
-        tokenizer_source_dir=args.tokenizer_source_dir,
+        hf_model_id=args.hf_model_id,
+        tokenizer_source=args.tokenizer_source,
         opset=args.opset,
         push_to_hf=args.push_to_hf,
         skip_onnx_export=args.skip_onnx_export,
