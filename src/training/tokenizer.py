@@ -75,5 +75,11 @@ class ModelTokenizer:
 if __name__ == "__main__":
     config = ModelTokenizerConfig()
     tokenizer = ModelTokenizer(config)
-    val = tokenizer.tokenize(["Hey", "Hi"])
+    prompt = tokenizer.format_data(
+        query="Сколько стоит кредитная карта",
+        docs=["Кредитная карта Сбера очень крутой продукт", "Паевые инвестиционные фонды помогают инвестировать"],
+        max_length=512,
+    )
+    with open("src/training/input_example.txt", "w") as f:
+        f.write(prompt)
     pass

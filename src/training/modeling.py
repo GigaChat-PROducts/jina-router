@@ -50,37 +50,41 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
             attention_mask=attention_mask,
             position_ids=position_ids,
             use_cache=False,
-            output_hidden_states=True,
+            output_hidden_states=False,
             **kwargs,
         )
 
-        hidden_states = outputs.hidden_states[-1]
+        hidden_states = outputs.logits
         batch_size, _, _ = hidden_states.shape
 
-        doc_embeds = []
-        query_embeds = []
+        projected = self.projector(hidden_states)  # [B,S,D]
 
-        for i in range(batch_size):
-            doc_mask = input_ids[i] == self.doc_embed_token_id
-            query_mask = input_ids[i] == self.query_embed_token_id
+        doc_mask = input_ids == self.doc_embed_token_id
+        query_mask = input_ids == self.query_embed_token_id
 
-            d_embeds = hidden_states[i][doc_mask]  # [num_docs_i, dim]
-            q_embed = hidden_states[i][query_mask]  # [1, dim]
+        # [B,D]
+        query_embeds = (
+            projected * query_mask.unsqueeze(-1)
+        ).sum(dim=1)
 
-            doc_embeds.append(d_embeds)
-            query_embeds.append(q_embed)
+        query_embeds = torch.nn.functional.normalize(
+            query_embeds,
+            p=2,
+            dim=-1,
+        )
 
-        doc_embeds = [self.projector(x) for x in doc_embeds]
-        query_embeds = [self.projector(x) for x in query_embeds]
+        projected = torch.nn.functional.normalize(
+            projected,
+            p=2,
+            dim=-1,
+        )
 
-        scores = []
+        # [B,S]
+        scores = (
+            projected * query_embeds.unsqueeze(1)
+        ).sum(dim=-1)
 
-        for q, d in zip(query_embeds, doc_embeds):
-            q = q.expand_as(d)
-
-            s = torch.nn.functional.cosine_similarity(d, q, dim=-1)
-
-            scores.append(s)
+        scores = scores.masked_fill(~doc_mask, -1e9)
 
         loss = None
         if labels is not None:
@@ -88,7 +92,7 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
 
             for s, target in zip(scores, labels):
                 log_probs = torch.nn.functional.log_softmax(s, dim=-1)
-                target_len = s.shape[0]
+                s = s.shape[0]
 
                 loss = torch.nn.functional.kl_div(
                     log_probs,
@@ -100,13 +104,11 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
 
             loss = torch.stack(losses).mean()
 
-        scores = [scores]
+        # Instead of: scores = [scores]; return CausalLMOutputWithScores(..., scores=scores)
+        # Use this:
 
         return CausalLMOutputWithScores(
             loss=loss,
             logits=None,
-            scores=scores,
-            # past_key_values=outputs.past_key_values,
-            # hidden_states=outputs.hidden_states,
-            # attentions=outputs.attentions,
+            scores=scores,  # ✅ Fixed-shape tensor: [batch_size, max_docs]
         )

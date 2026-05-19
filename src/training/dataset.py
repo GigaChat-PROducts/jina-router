@@ -120,6 +120,8 @@ class TrainingDataset(Dataset):
                 docs=data.documents,
                 max_length=max_length,
             )
+            with open("src/training/input_example.txt", "w") as f:
+                f.write(text)
             texts.append(text)
             max_docs = max(max_docs, len(data.documents))
 
