@@ -26,7 +26,7 @@ class TrainingConfig(BaseSettings):
     save_steps: int = Field(default=500)
     save_total_limit: int = Field(default=1)
 
-    # MLflow defaults; tracking server is already running locally
+    # MLflow tracking server URL; set via TRAINING__MLFLOW_TRACKING_URI when needed
     mlflow_tracking_uri: str = Field(default="http://localhost:5600")
     mlflow_experiment_name: str = Field(default="jina-router-training")
 

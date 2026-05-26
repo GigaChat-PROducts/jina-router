@@ -2,6 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
+import mlflow
 from transformers.trainer import Trainer
 
 from src.dataset.schemas import ItemClass
@@ -44,6 +45,9 @@ def main():
         cfg.final_dir_name = args.final_dir_name
     if args.export_onnx:
         cfg.export_onnx = True
+
+    mlflow.set_tracking_uri(cfg.mlflow_tracking_uri)
+    mlflow.set_experiment(cfg.mlflow_experiment_name)
 
     tokenizer_config = ModelTokenizerConfig()
 
