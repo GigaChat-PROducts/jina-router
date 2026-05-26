@@ -25,7 +25,7 @@ class FloatParameter(BaseModel):
 
 
 class OptimizerSettings(BaseSettings):
-    run_name: str = "baseline_v4"
+    run_name: str = "pure_instruct_v1"
     n_trials: int = 1000
 
     # optimized parameters

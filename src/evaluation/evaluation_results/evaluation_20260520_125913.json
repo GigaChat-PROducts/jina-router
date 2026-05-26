@@ -1,0 +1,43 @@
+{
+  "samples_total": 568,
+  "samples_processed": 560,
+  "samples_failed": 8,
+  "task_kl_div": 0.07851290171887886,
+  "task_mse": 0.06207017442138484,
+  "product_kl_div": 0.10435833155439447,
+  "product_mse": 0.030479479803268976,
+  "failures": [
+    {
+      "item_id": "7c4f79e6-27bc-456a-829f-b9c067519143",
+      "error": ""
+    },
+    {
+      "item_id": "a2a52143-3906-4cc9-8d79-06a8df948e95",
+      "error": ""
+    },
+    {
+      "item_id": "fef51634-781b-4892-a8a8-582cd2593877",
+      "error": ""
+    },
+    {
+      "item_id": "dd2798d3-edf6-40b9-a10a-3d91088c0630",
+      "error": ""
+    },
+    {
+      "item_id": "58cb5132-b19d-42eb-97fc-afffd5537493",
+      "error": ""
+    },
+    {
+      "item_id": "b182ebd0-edfd-4c48-b77b-900bdb25bdb3",
+      "error": ""
+    },
+    {
+      "item_id": "ccd7b802-0005-4f6b-b7c1-4b08ffff94ee",
+      "error": ""
+    },
+    {
+      "item_id": "1635cdb6-6b63-4cbb-872d-4f5fa667f0cb",
+      "error": ""
+    }
+  ]
+}
