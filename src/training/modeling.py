@@ -90,13 +90,13 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         if labels is not None:
             losses = []
 
-            for s, target in zip(scores, labels):
-                log_probs = torch.nn.functional.log_softmax(s, dim=-1)
+            for s, target, mask in zip(scores, labels, doc_mask):
+                log_probs = torch.nn.functional.log_softmax(s[mask], dim=-1)
                 s = s.shape[0]
 
                 loss = torch.nn.functional.kl_div(
                     log_probs,
-                    target[:target_len],
+                    target,
                     reduction="sum",
                 )
 
