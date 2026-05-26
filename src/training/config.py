@@ -13,11 +13,13 @@ class TrainingConfig(BaseSettings):
     per_device_train_batch_size: int = Field(default=1)
     per_device_eval_batch_size: int = Field(default=1)
     learning_rate: float = Field(default=5e-5)
-    warmup_steps: int = Field(default=1)
     weight_decay: float = Field(default=0.01)
     max_grad_norm: float = Field(default=1.0)
     gradient_accumulation_steps: int = Field(default=1)
     gradient_checkpointing: bool = Field(default=False)
+
+    lr_scheduler_type: str = Field(default="cosine")
+    warmup_ratio: float = Field(default=0.05)
 
     # Logging / saving
     eval_strategy: str = Field(default="steps")
@@ -49,7 +51,8 @@ class TrainingConfig(BaseSettings):
             per_device_train_batch_size=self.per_device_train_batch_size,
             per_device_eval_batch_size=self.per_device_eval_batch_size,
             learning_rate=self.learning_rate,
-            warmup_steps=self.warmup_steps,
+            lr_scheduler_type=self.lr_scheduler_type,
+            warmup_ratio=self.warmup_ratio,
             weight_decay=self.weight_decay,
             max_grad_norm=self.max_grad_norm,
             gradient_accumulation_steps=self.gradient_accumulation_steps,
