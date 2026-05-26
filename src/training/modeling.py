@@ -92,7 +92,7 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
 
             for s, target, mask in zip(scores, labels, doc_mask):
                 log_probs = torch.nn.functional.log_softmax(s[mask], dim=-1)
-                s = s.shape[0]
+                s = s[mask].shape[0]
 
                 loss = torch.nn.functional.kl_div(
                     log_probs,

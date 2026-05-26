@@ -63,7 +63,7 @@ class TrainingDataset(Dataset):
             return res
 
         task_keys = ["documents", "best_practices"]
-        for d in data[:100]:
+        for d in data:
             item = DatasetItem(**d)
             if item.item_class != mode:
                 continue
@@ -120,8 +120,6 @@ class TrainingDataset(Dataset):
                 docs=data.documents,
                 max_length=max_length,
             )
-            with open("src/training/input_example.txt", "w") as f:
-                f.write(text)
             texts.append(text)
             max_docs = max(max_docs, len(data.documents))
 

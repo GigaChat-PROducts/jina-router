@@ -9,7 +9,7 @@ class TrainingConfig(BaseSettings):
     final_dir_name: str = Field(default="final")
     export_onnx: bool = Field(default=False)
     onnx_opset: int = Field(default=18)
-    num_train_epochs: int = Field(default=3)
+    num_train_epochs: int = Field(default=1)
     per_device_train_batch_size: int = Field(default=1)
     per_device_eval_batch_size: int = Field(default=1)
     learning_rate: float = Field(default=5e-5)
@@ -19,7 +19,7 @@ class TrainingConfig(BaseSettings):
     gradient_checkpointing: bool = Field(default=False)
 
     lr_scheduler_type: str = Field(default="cosine")
-    warmup_ratio: float = Field(default=0.05)
+    warmup_steps: int | float = Field(default=0.05)
 
     # Logging / saving
     eval_strategy: str = Field(default="steps")
@@ -52,7 +52,7 @@ class TrainingConfig(BaseSettings):
             per_device_eval_batch_size=self.per_device_eval_batch_size,
             learning_rate=self.learning_rate,
             lr_scheduler_type=self.lr_scheduler_type,
-            warmup_ratio=self.warmup_ratio,
+            warmup_steps=self.warmup_steps,
             weight_decay=self.weight_decay,
             max_grad_norm=self.max_grad_norm,
             gradient_accumulation_steps=self.gradient_accumulation_steps,
@@ -65,5 +65,5 @@ class TrainingConfig(BaseSettings):
             seed=self.seed,
             bf16=self.bf16,
             report_to=["mlflow"],
-            eval_on_start=False,
+            eval_on_start=True,
         )

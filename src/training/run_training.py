@@ -10,7 +10,6 @@ from src.training.config import TrainingConfig
 from src.training.dataset import TrainingDataset
 from src.training.model_constants import MODEL_NAME
 from src.training.modeling import JinaForRanking
-from src.training.onnx_export import export_model_bundle
 from src.training.tokenizer import ModelTokenizer, ModelTokenizerConfig
 
 logger = logging.getLogger(__name__)
@@ -69,15 +68,18 @@ def main():
 
     trainer.train()
 
+    final_dir = Path(cfg.output_dir) / cfg.final_dir_name
+    logger.info("Saving final model bundle to %s", final_dir)
+    trainer.save_model(str(final_dir))
+    tokenizer.save_pretrained(str(final_dir))
+        
     if cfg.export_onnx:
-        final_dir = Path(cfg.output_dir) / cfg.final_dir_name
-        logger.info("Saving final model bundle to %s", final_dir)
-        trainer.save_model(str(final_dir))
-        tokenizer.save_pretrained(str(final_dir))
+        from src.training.onnx_export import export_model_bundle
+
         export_model_bundle(
             source_model_dir=final_dir,
             output_dir=final_dir,
-            tokenizer_source_dir=final_dir,
+            tokenizer_source=final_dir,
             opset=cfg.onnx_opset,
         )
 
