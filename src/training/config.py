@@ -23,10 +23,10 @@ class TrainingConfig(BaseSettings):
 
     # Logging / saving
     eval_strategy: str = Field(default="steps")
-    eval_steps: int = Field(default=5)
+    eval_steps: int | float = Field(default=0.05)
     logging_steps: int = Field(default=1)
-    save_steps: int = Field(default=500)
-    save_total_limit: int = Field(default=1)
+    save_steps: int | float = Field(default=0.05)
+    save_total_limit: int = Field(default=2)
 
     # MLflow tracking server URL; set via TRAINING__MLFLOW_TRACKING_URI when needed
     mlflow_tracking_uri: str = Field(default="http://localhost:5600")
