@@ -96,7 +96,7 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
 
                 loss = torch.nn.functional.kl_div(
                     log_probs,
-                    target,
+                    target[:s],
                     reduction="sum",
                 )
 
