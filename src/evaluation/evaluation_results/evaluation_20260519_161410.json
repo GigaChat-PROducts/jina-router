@@ -1,0 +1,31 @@
+{
+  "samples_total": 5,
+  "samples_processed": 0,
+  "samples_failed": 5,
+  "task_kl_div": 0.0,
+  "task_mse": 0.0,
+  "product_kl_div": 0.0,
+  "product_mse": 0.0,
+  "failures": [
+    {
+      "item_id": "54a5f984-040c-4a62-b817-ccb123d868dc",
+      "error": "[Errno 104] Connection reset by peer"
+    },
+    {
+      "item_id": "12960d20-0e8f-40c4-af1e-10c364380e94",
+      "error": "[Errno 104] Connection reset by peer"
+    },
+    {
+      "item_id": "51d77d10-f3ce-48d7-9304-76e4e5f3136e",
+      "error": "[Errno 104] Connection reset by peer"
+    },
+    {
+      "item_id": "89d17170-693f-432d-bedc-d53245ceef02",
+      "error": "[Errno 104] Connection reset by peer"
+    },
+    {
+      "item_id": "ba7858f2-c535-4e50-8b08-9bf5c34aa71b",
+      "error": "[Errno 104] Connection reset by peer"
+    }
+  ]
+}

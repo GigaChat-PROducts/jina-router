@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -9,6 +11,25 @@ class TrainingConfig(BaseSettings):
     final_dir_name: str = Field(default="final")
     export_onnx: bool = Field(default=False)
     onnx_opset: int = Field(default=18)
+
+    # LoRA defaults tuned for decoder-only transformers.
+    lora_r: int = Field(default=8)
+    lora_alpha: int = Field(default=32)
+    lora_dropout: float = Field(default=0.05)
+    lora_bias: Literal["none", "all", "lora_only"] = Field(default="none")
+    lora_use_rslora: bool = Field(default=True)
+    lora_target_modules: list[str] = Field(
+        default_factory=lambda: [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ]
+    )
+
     num_train_epochs: int = Field(default=1)
     per_device_train_batch_size: int = Field(default=1)
     per_device_eval_batch_size: int = Field(default=1)

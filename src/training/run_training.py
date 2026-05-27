@@ -1,8 +1,10 @@
 import argparse
 import logging
 from pathlib import Path
+from typing import Any
 
 import mlflow
+from peft import LoraConfig, TaskType, get_peft_model
 from transformers.trainer import Trainer
 
 from src.dataset.schemas import ItemClass
@@ -19,6 +21,18 @@ logging.basicConfig(level=logging.INFO)
 def load_model(base_name: str = MODEL_NAME):
     logger.info(f"Loading base model {base_name}")
     return JinaForRanking.from_pretrained(base_name)
+
+
+def build_lora_config(cfg: TrainingConfig) -> LoraConfig:
+    return LoraConfig(
+        task_type=TaskType.CAUSAL_LM,
+        r=cfg.lora_r,
+        lora_alpha=cfg.lora_alpha,
+        lora_dropout=cfg.lora_dropout,
+        bias=cfg.lora_bias,
+        target_modules=cfg.lora_target_modules,
+        use_rslora=cfg.lora_use_rslora,
+    )
 
 
 def main():
@@ -54,7 +68,10 @@ def main():
     train_ds = TrainingDataset(mode=ItemClass.TRAIN, tokenizer=tokenizer)
     eval_ds = TrainingDataset(mode=ItemClass.VAL, tokenizer=tokenizer)
 
-    model = load_model()
+    model: Any = get_peft_model(load_model(), build_lora_config(cfg))
+    base_model = model.get_base_model()
+    for parameter in base_model.projector.parameters():
+        parameter.requires_grad = True
 
     training_args = cfg.get_training_arguments()
 
@@ -68,11 +85,12 @@ def main():
 
     trainer.train()
 
+    model = model.merge_and_unload()
     final_dir = Path(cfg.output_dir) / cfg.final_dir_name
     logger.info("Saving final model bundle to %s", final_dir)
-    trainer.save_model(str(final_dir))
+    model.save_pretrained(str(final_dir))
     tokenizer.save_pretrained(str(final_dir))
-        
+
     if cfg.export_onnx:
         from src.training.onnx_export import export_model_bundle
 

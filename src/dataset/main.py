@@ -266,12 +266,7 @@ if __name__ == "__main__":
     #     dataset,
     #     client=client,
     # )
-    upload_to_huggingface(
-        dataset_path=Path(__file__).parent / "data",
-        repo_id="Hinter-Models/product-task-router",
-    )
-
-    # download_dataset(
+    # upload_to_huggingface(
     #     dataset_path=Path(__file__).parent / "data",
     #     repo_id="Hinter-Models/product-task-router",
     # )
