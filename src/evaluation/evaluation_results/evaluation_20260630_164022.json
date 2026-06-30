@@ -1,0 +1,95 @@
+{
+  "samples_total": 10,
+  "samples_processed": 1,
+  "samples_failed": 9,
+  "task_kl_div": 0.06056810543691246,
+  "task_mse": 0.05439621843540159,
+  "product_kl_div": 0.09652612246135037,
+  "product_mse": 0.002460148092442142,
+  "failures": [
+    {
+      "item_id": "12960d20-0e8f-40c4-af1e-10c364380e94",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "51d77d10-f3ce-48d7-9304-76e4e5f3136e",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "89d17170-693f-432d-bedc-d53245ceef02",
+      "error": "[Errno 104] Connection reset by peer"
+    },
+    {
+      "item_id": "ba7858f2-c535-4e50-8b08-9bf5c34aa71b",
+      "error": "[Errno 104] Connection reset by peer"
+    },
+    {
+      "item_id": "8bd75a0c-9623-49e6-a3a8-32328154744c",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "ea1c5876-a8c4-487a-a6d6-d1020eeea046",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "7faeb65e-dbe2-4045-80a3-15f2217b7b2a",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "e807ab70-9d0e-4345-9e7d-921b4d2d3a49",
+      "error": "[Errno 104] Connection reset by peer"
+    },
+    {
+      "item_id": "900e73d8-d5fc-404f-8392-166490ba58ca",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    }
+  ],
+  "detailed_samples": [
+    {
+      "item_id": "54a5f984-040c-4a62-b817-ccb123d868dc",
+      "query": "Комиссия списывается только с месяца, следующего затем, в котором вы совершили 1 расчётную операцию.\nДо этого вы можете пользоваться счётом и сервисами бесплатно.\nТакже есть определённые лимиты на бесплатные переводы и приём наличных, которые зависят от вашего выбора пакета услуг. Это интересно.\nА сколько стоит бизнес карта при подключении подписки?\nПодписки СберБизнес прайм, выпуск и обслуживание бизнес карты бесплатны. Кроме того, карта доступна с функционалом для безналичных расчётов и снятия наличных в пределах лимитов.\nМожно выпустить как именную, так и неименную карту. Спасибо за информацию. Мне кажется, это то, что мне нужно. Рад, что наши условия вас заинтересовали. Если хотите, могу подробнее рассказать о пакетах услуг и помочь с открытием счета уже сейчас.\nДа, давайте оформим. Отлично. Приступим, пожалуйста.\nПредоставьте документы для открытия счета, и я помогу вам с оформлением.",
+      "predicted_task": [
+        {
+          "name": "documents",
+          "probability": 0.4332299689906972
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.5667700310093028
+        }
+      ],
+      "gt_task": [
+        {
+          "name": "documents",
+          "probability": 0.2
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.8
+        }
+      ],
+      "task_kl_div": 0.06056810543691246,
+      "predicted_product": [
+        {
+          "name": "business_account",
+          "probability": 0.9995998799639892
+        },
+        {
+          "name": "perevod_zp",
+          "probability": 0.00040012003601080324
+        }
+      ],
+      "gt_product": [
+        {
+          "name": "business_account",
+          "probability": 0.95
+        },
+        {
+          "name": "perevod_zp",
+          "probability": 0.05
+        }
+      ],
+      "product_kl_div": 0.09652612246135037
+    }
+  ]
+}

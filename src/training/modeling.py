@@ -50,7 +50,6 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
             attention_mask=attention_mask,
             position_ids=position_ids,
             use_cache=False,
-            output_hidden_states=False,
             **kwargs,
         )
 
@@ -63,9 +62,7 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         query_mask = input_ids == self.query_embed_token_id
 
         # [B,D]
-        query_embeds = (
-            projected * query_mask.unsqueeze(-1)
-        ).sum(dim=1)
+        query_embeds = (projected * query_mask.unsqueeze(-1)).sum(dim=1)
 
         query_embeds = torch.nn.functional.normalize(
             query_embeds,
@@ -80,9 +77,7 @@ class JinaForRanking(modeling_qwen3.Qwen3ForCausalLM):
         )
 
         # [B,S]
-        scores = (
-            projected * query_embeds.unsqueeze(1)
-        ).sum(dim=-1)
+        scores = (projected * query_embeds.unsqueeze(1)).sum(dim=-1)
 
         scores = scores.masked_fill(~doc_mask, -1e9)
 

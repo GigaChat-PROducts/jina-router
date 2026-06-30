@@ -1,0 +1,277 @@
+{
+  "samples_total": 20,
+  "samples_processed": 4,
+  "samples_failed": 16,
+  "task_kl_div": 0.02307615288805362,
+  "task_mse": 0.022699447334479643,
+  "product_kl_div": 0.26722179395429285,
+  "product_mse": 0.04085844953723536,
+  "failures": [
+    {
+      "item_id": "a999a602-0ce4-45dc-9baf-0529a2128219",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "a32797f4-4fd3-4a64-b162-417343408d70",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "fbb62180-2ce4-4b38-884a-1a3321f46808",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "f74168a7-8fe8-4bfa-ad29-4a6bff7f001b",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "e5e4a624-f472-4b58-84f8-ee9726b65e15",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "d2e79fcf-ec1f-4d45-b98c-d15833d4eaff",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "c687a510-6001-467e-86dc-d56a60bbaa83",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "7c6cedd5-6846-4cb0-8484-772087cfca5f",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "66151c24-26d3-4a77-b3da-d75b2c4ae210",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "b0d27b3d-0726-47e2-b7a7-17dd7833aa8e",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "32e28683-a6cd-43c7-9c2b-2c7bb5f69485",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "b20aba52-d195-4884-be8a-8f265fb054b1",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "2929f006-a91d-46aa-a7dc-4df6bf4f11a0",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "ea3f1e88-dfe3-4f13-a6ce-4e8b6ba982d4",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "c4607ef0-5653-4863-a53c-f97e3495c7e2",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    },
+    {
+      "item_id": "54a8f413-7269-4646-bb2f-ab40f27d467a",
+      "error": "500, message='Internal Server Error', url='http://91.211.217.36:8022/api/v1/reranker/predict'"
+    }
+  ],
+  "detailed_samples": [
+    {
+      "item_id": "9049606d-df9b-4e39-b4fe-2836494ad812",
+      "query": "Получаете ли вы пенсию?\nДа, пенсия тоже приходит на мою карту.\nТогда рекомендую оформить перевод пенсии на карту Сбера. Это позволит вам получать бонусы СберСпасибо на вашу пенсию и пользоваться специальными предложениями для пенсионеров.\nКроме того, вы сможете открывать вклады под повышенные ставки. Хотите узнать подробности об этом предложении?\nДа конечно расскажите подробнее про вклады.\nМы предлагаем выгодные условия по вкладам. Процентная ставка зависит от срока вклада и его размера. Минимальная сумма для открытия вклада составляет всего тысячу рублей. Деньги застрахованы государством до 1 миллиона 400 тысяч рублей.\nМожно снимать деньги досрочно но тогда теряются начисленные проценты. Если планируете регулярно откладывать советую обратить внимание на возможность пополнения вклада.\nКакой максимальный срок вклада?\nМаксимальный срок нашего вклада три года. Чем дольше срок тем выше процентная ставка. Есть еще вопросы?",
+      "predicted_task": [
+        {
+          "name": "documents",
+          "probability": 0.49679871948779514
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.5032012805122049
+        }
+      ],
+      "gt_task": [
+        {
+          "name": "documents",
+          "probability": 0.3
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.7
+        }
+      ],
+      "task_kl_div": 0.039871157956935716,
+      "predicted_product": [
+        {
+          "name": "vklad",
+          "probability": 0.9752901160464186
+        },
+        {
+          "name": "perevod_pensii",
+          "probability": 0.024309723889555823
+        },
+        {
+          "name": "perevod_zp",
+          "probability": 0.00020008003201280514
+        },
+        {
+          "name": "sber_prime",
+          "probability": 0.00020008003201280514
+        }
+      ],
+      "gt_product": [
+        {
+          "name": "vklad",
+          "probability": 0.95
+        },
+        {
+          "name": "perevod_pensii",
+          "probability": 0.01
+        },
+        {
+          "name": "perevod_zp",
+          "probability": 0.02
+        },
+        {
+          "name": "sber_prime",
+          "probability": 0.02
+        }
+      ],
+      "product_kl_div": 0.03758713586468662
+    },
+    {
+      "item_id": "81b8d268-1884-43f1-8bae-882fae6c89df",
+      "query": "Мы можем оформить Сим карту или виртуальную исим прямо здесь, в офисе.\nSteam это удобная виртуальная Сим карта, которую не нужно физически вставлять в телефон. Её нельзя потерять. Если вы выберете перенос своего номера, мы поможем с этим процессом бесплатно. Во время переноса вы сможете пользоваться временным номером без Перебоев в связи спасибо за информацию. Я хотел бы открыть счёт и оформить Сим карту.",
+      "predicted_task": [
+        {
+          "name": "documents",
+          "probability": 0.4142242672801841
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.585775732719816
+        }
+      ],
+      "gt_task": [
+        {
+          "name": "documents",
+          "probability": 0.4
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.6
+        }
+      ],
+      "task_kl_div": 0.00020919657750940925,
+      "predicted_product": [
+        {
+          "name": "sber_mobile",
+          "probability": 0.998999699909973
+        },
+        {
+          "name": "sber_prime",
+          "probability": 0.0010003000900270082
+        }
+      ],
+      "gt_product": [
+        {
+          "name": "sber_mobile",
+          "probability": 0.95
+        },
+        {
+          "name": "sber_prime",
+          "probability": 0.05
+        }
+      ],
+      "product_kl_div": 0.07390413949584598
+    },
+    {
+      "item_id": "87723026-ba57-4cdf-a2ab-b091c7108a1e",
+      "query": "Извиняюсь за неточность ранее. Процентная ставка после окончания льготного периода составит 24%. Но пока вы укладываетесь в срок возврата средств проценты начисляться не будут.\nДавайте перейдем непосредственно к оформлению заявки?\nХорошо. А какие еще бонусы кроме бонусов спасибо есть?\nПомимо бонусов спасибо наша карта дает доступ к дополнительным услугам. Например, вы получите возможность использовать сервис СберЗдоровье. Это удобный способ консультироваться с врачами онлайн когда вам удобно.\nЭто как работает?\nЧерез мобильное приложение вы можете связаться с врачом круглосуточно. Консультация проходит быстро и качественно. Также доступна запись на прием в клинику или вызов доктора домой.\nОго! Никогда раньше таким не пользовался. Какая стоимость такой услуги?\nДля пользователей кредитных карт Сбербанка многие медицинские услуги предоставляются со скидкой или вовсе бесплатно. Особенно если подключена подписка СберПрайм.\nИнтересно. Тогда расскажите подробнее про оформление карты и подключение этих сервисов.",
+      "predicted_task": [
+        {
+          "name": "documents",
+          "probability": 0.4565369610883265
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.5434630389116735
+        }
+      ],
+      "gt_task": [
+        {
+          "name": "documents",
+          "probability": 0.6
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.4
+        }
+      ],
+      "task_kl_div": 0.02067856737404255,
+      "predicted_product": [
+        {
+          "name": "credit_card",
+          "probability": 0.9977993398019406
+        },
+        {
+          "name": "sber_health",
+          "probability": 0.002200660198059418
+        }
+      ],
+      "gt_product": [
+        {
+          "name": "credit_card",
+          "probability": 0.6
+        },
+        {
+          "name": "sber_health",
+          "probability": 0.4
+        }
+      ],
+      "product_kl_div": 0.8879546666896972
+    },
+    {
+      "item_id": "6420fdc1-4d73-414a-889b-36235435fb26",
+      "query": "Оформить хочу. Угу. Хорошо. Для каких целей вам нужна карта? Что будете? Что будет на неё зачисляться?\nДа, я устраиваюсь сейчас на работу. Мне нужна карта для зарплаты. Ну.\nРеквизиты, пожалуйста. Поняла вас.\nСкажите, какие-то преимущества будут, если я вам переведу заработную плату?\nДа, конечно. Получать зарплату на Сбербанк как бы выгодно. У вас будут выгодные условия по вкладам, накопительным счетам, кредиту, ипотеки, а также скидки от партнёров. Карта будет без обслуживания.\nА что там по вкладам? У вас будет надбавка по вкладам на 3% ставки выше для тех, кто переведёт зарплату.\nСбербанк. Ничего себе. Так-то существенно, конечно, и по кредиту скидка 5%. Да, я кредиты не беру, но все равно неплохо поняла вас. Ну, если что есть.",
+      "predicted_task": [
+        {
+          "name": "documents",
+          "probability": 0.42312693808142443
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.5768730619185756
+        }
+      ],
+      "gt_task": [
+        {
+          "name": "documents",
+          "probability": 0.6
+        },
+        {
+          "name": "best_practices",
+          "probability": 0.4
+        }
+      ],
+      "task_kl_div": 0.03154568964372681,
+      "predicted_product": [
+        {
+          "name": "business_account",
+          "probability": 0.0012003601080324098
+        },
+        {
+          "name": "perevod_zp",
+          "probability": 0.9987996398919676
+        }
+      ],
+      "gt_product": [
+        {
+          "name": "perevod_zp",
+          "probability": 0.95
+        },
+        {
+          "name": "business_account",
+          "probability": 0.05
+        }
+      ],
+      "product_kl_div": 0.06944123376694149
+    }
+  ]
+}

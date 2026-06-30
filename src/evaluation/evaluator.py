@@ -37,6 +37,18 @@ class PredictionFailure:
 
 
 @dataclass
+class DetailedSampleResult:
+    item_id: str
+    query: str
+    predicted_task: list[dict[str, float]]
+    gt_task: list[dict[str, float]]
+    task_kl_div: float
+    predicted_product: list[dict[str, float]]
+    gt_product: list[dict[str, float]]
+    product_kl_div: float
+
+
+@dataclass
 class EvaluationResult:
     samples_total: int
     samples_processed: int
@@ -46,8 +58,9 @@ class EvaluationResult:
     product_kl_div: float
     product_mse: float
     failures: list[PredictionFailure]
+    detailed_samples: list[DetailedSampleResult]
 
-    def to_dict(self) -> dict[str, float | int | list[dict[str, str]]]:
+    def to_dict(self) -> dict[str, any]:
         return {
             "samples_total": self.samples_total,
             "samples_processed": self.samples_processed,
@@ -57,6 +70,7 @@ class EvaluationResult:
             "product_kl_div": self.product_kl_div,
             "product_mse": self.product_mse,
             "failures": [asdict(failure) for failure in self.failures],
+            "detailed_samples": [asdict(sample) for sample in self.detailed_samples],
         }
 
 
@@ -79,7 +93,8 @@ def get_scores(
     elif metric == "kl_div":
         eps = 1e-12
         res = sum(
-            predicted_map[key] * math.log((predicted_map[key] + eps) / (target_map[key] + eps))
+            target_map[key]
+            * math.log((target_map[key] + eps) / (predicted_map[key] + eps))
             for key in target_map
         ) / len(target_map)
     else:
@@ -164,14 +179,17 @@ def _build_planner(config: EvaluationConfig) -> RerankQuotaPlanner:
 async def _predict_item(
     item: DatasetItem,
     planner: StaticQuotaPlanner | RerankQuotaPlanner,
+    semaphore: asyncio.Semaphore,  # Added semaphore parameter
 ) -> tuple[str, list[Distribution], list[Distribution], str | None]:
     try:
-        quotas = await planner.plan_quotas(
-            query="\n".join(item.dialog),
-            products=[item.base_product, *item.products],
-            base_product=item.base_product,
-            current_product=item.current_product,
-        )
+        # Wrap the API/planning execution with the semaphore context manager
+        async with semaphore:
+            quotas = await planner.plan_quotas(
+                query="\n".join(item.dialog),
+                products=[item.base_product, *item.products],
+                base_product=item.base_product,
+                current_product=item.current_product,
+            )
         task_distribution, product_distribution = _aggregate_predictions(quotas)
         return item.item_id, task_distribution, product_distribution, None
     except Exception as error:
@@ -181,12 +199,20 @@ async def _predict_item(
 def _aggregate_metric_sums(
     dataset: list[DatasetItem],
     predictions: list[tuple[str, list[Distribution], list[Distribution], str | None]],
-) -> tuple[list[float], list[float], list[float], list[float], list[PredictionFailure]]:
+) -> tuple[
+    list[float],
+    list[float],
+    list[float],
+    list[float],
+    list[PredictionFailure],
+    list[DetailedSampleResult],
+]:
     task_kl = []
     task_mse = []
     product_kl = []
     product_mse = []
     failures: list[PredictionFailure] = []
+    detailed_samples: list[DetailedSampleResult] = []
 
     for item, (item_id, pred_task, pred_product, error) in zip(
         dataset, predictions, strict=False
@@ -195,18 +221,44 @@ def _aggregate_metric_sums(
             failures.append(PredictionFailure(item_id=item_id, error=error))
             continue
 
-        task_kl.append(get_scores(item.gt_task_distribution, pred_task, "kl_div"))
-        task_mse.append(get_scores(item.gt_task_distribution, pred_task, "mse"))
-        product_kl.append(
-            get_scores(
-                item.gt_product_distribution_with_context, pred_product, "kl_div"
-            )
+        item_task_kl = get_scores(item.gt_task_distribution, pred_task, "kl_div")
+        item_task_mse = get_scores(item.gt_task_distribution, pred_task, "mse")
+        item_product_kl = get_scores(
+            item.gt_product_distribution_with_context, pred_product, "kl_div"
         )
-        product_mse.append(
-            get_scores(item.gt_product_distribution_with_context, pred_product, "mse")
+        item_product_mse = get_scores(
+            item.gt_product_distribution_with_context, pred_product, "mse"
         )
 
-    return task_kl, task_mse, product_kl, product_mse, failures
+        task_kl.append(item_task_kl)
+        task_mse.append(item_task_mse)
+        product_kl.append(item_product_kl)
+        product_mse.append(item_product_mse)
+
+        detailed_samples.append(
+            DetailedSampleResult(
+                item_id=item_id,
+                query="\n".join(item.dialog),
+                predicted_task=[
+                    {"name": d.name, "probability": d.probability} for d in pred_task
+                ],
+                predicted_product=[
+                    {"name": d.name, "probability": d.probability} for d in pred_product
+                ],
+                gt_task=[
+                    {"name": d.name, "probability": d.probability}
+                    for d in (item.gt_task_distribution or [])
+                ],
+                gt_product=[
+                    {"name": d.name, "probability": d.probability}
+                    for d in (item.gt_product_distribution_with_context or [])
+                ],
+                task_kl_div=item_task_kl,
+                product_kl_div=item_product_kl,
+            )
+        )
+
+    return task_kl, task_mse, product_kl, product_mse, failures, detailed_samples
 
 
 def get_dataset(path: Path, mode: ItemClass) -> list[DatasetItem]:
@@ -225,11 +277,24 @@ async def run_evaluation(
     config: EvaluationConfig | None = None,
 ) -> EvaluationResult:
     effective_config = build_default_config() if config is None else config
-    dataset = get_dataset(dataset_path, mode)
+    dataset = get_dataset(dataset_path, mode)[100:120]
     planner = _build_planner(effective_config)
-    tasks = [_predict_item(item, planner) for item in dataset]
+
+    # Initialize the semaphore with a max concurrency limit of 32
+    semaphore = asyncio.Semaphore(16)
+
+    # Pass the semaphore down into each task
+    tasks = [_predict_item(item, planner, semaphore) for item in dataset]
     predictions = await async_tqdm.gather(*tasks, total=len(tasks))
-    task_kl, task_mse, product_kl, product_mse, failures = _aggregate_metric_sums(
+
+    (
+        task_kl,
+        task_mse,
+        product_kl,
+        product_mse,
+        failures,
+        detailed_samples,
+    ) = _aggregate_metric_sums(
         dataset,
         predictions,
     )
@@ -245,13 +310,16 @@ async def run_evaluation(
         product_kl_div=sum(product_kl) / denominator,
         product_mse=sum(product_mse) / denominator,
         failures=failures,
+        detailed_samples=detailed_samples,
     )
 
 
 async def main() -> None:
     path = Path("src/dataset/data/labeled_dataset.json")
     results = await run_evaluation(path, ItemClass.TEST, build_default_config())
-    print(json.dumps(results.to_dict(), ensure_ascii=False, indent=2))
+    with open("evaluation_results.json", "w", encoding="utf-8") as f:
+        json.dump(results.to_dict(), f, ensure_ascii=False, indent=2)
+    # print(json.dumps(results.to_dict(), ensure_ascii=False, indent=2))
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_path = (
         Path(__file__).parent / "evaluation_results" / f"evaluation_{timestamp}.json"
@@ -263,4 +331,7 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    # from dotenv import load_dotenv
+
+    # load_dotenv(".env")
     asyncio.run(main())
