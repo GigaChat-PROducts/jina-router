@@ -277,7 +277,7 @@ async def run_evaluation(
     config: EvaluationConfig | None = None,
 ) -> EvaluationResult:
     effective_config = build_default_config() if config is None else config
-    dataset = get_dataset(dataset_path, mode)[100:120]
+    dataset = get_dataset(dataset_path, mode)
     planner = _build_planner(effective_config)
 
     # Initialize the semaphore with a max concurrency limit of 32
